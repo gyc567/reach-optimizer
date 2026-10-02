@@ -1,0 +1,41 @@
+# gate.yaml — mechanical path policy for loops (ReachOS)
+# Consumed by loop-gate style tooling (`loop-gate check --action <type> --paths <files>`:
+# exit 2 = escalate to human, exit 0 = proceed). Keep in sync with loop-constraints.md —
+# loop-sync style checks should flag divergence between prose and this file.
+
+version: 1
+maxFiles: 10          # any change touching more files escalates, whatever the path
+
+policy:
+  # Never auto-edit without human approval
+  deny:
+    - "**/.env"
+    - "**/.env.*"
+    - "apps/api/prisma/migrations/**"
+    - "vercel.json"                                    # cron + build config
+    - "packages/rules-engine/src/config/weights.json"  # C5: D2 governance only
+    - "**/credentials/**"
+    - "**/*_key*"
+    - "**/*_secret*"
+
+  # Near-deny: published product surface — docs/comment-level changes only, everything
+  # else escalates (store listing, manifest, release surfaces)
+  nearDeny:
+    path: "apps/extension/**"
+    allow:
+      - "apps/extension/store/privacy-policy.md"
+      - "**/*.md"
+    note: "manifest.json / service-worker / content scripts are shipping-product code"
+
+  # Schema layer: additive-only (new optional fields), never rename/remove/retype
+  additiveOnly:
+    - "packages/shared-types/**"
+
+  # Frozen response contracts (see loop-constraints C4); companion contract snapshot
+  # tests are the CI-side enforcement, this is the loop-side guard
+  contractFrozen:
+    - "apps/api/app/api/**"
+
+autoMerge:
+  enabled: false       # default deny — no auto-merge, empty allowlist by design
+  allowlist: []

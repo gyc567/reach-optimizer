@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # pnpm workspaces — the root lockfile covers apps/* and packages/*
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - loop-watch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - loop-watch
