@@ -10,11 +10,13 @@ lock:
 
 ## High Priority (loop is acting or waiting on human)
 
-- **Bootstrap in flight** — loop-engineering Week-0 artifacts created on branch
-  `chore/loop-engineering-bootstrap`; awaiting PR + first CI proof.
-- **Working-tree convergence** — Web plan v2 Phase 0–3 implementation (59 dirty files:
-  shared forecast engine, anthropic-fetch adapter, web scorer + i18n + tests) to be
-  opened as `feat/web-scorer-phase0-3`; CI cannot prove itself until one of these merges.
+- **Two PRs awaiting human review/merge** (merge order matters — CI first):
+  - [#1 chore(loop): bootstrap loop-engineering framework](https://github.com/gyc567/reach-optimizer/pull/1)
+    — E0 CI + registry/gates/skills; self-proves the workflow on this PR.
+  - [#2 feat(reachos): web tweet scorer + shared forecast + Anthropic-compatible adapter](https://github.com/gyc567/reach-optimizer/pull/2)
+    — Web plan v2 Phase 0–3 (59 files, 4 commits); CI guards it once #1 merges.
+- **First CI proof** — pending on PR #1. Until a workflow runs green on GitHub, treat
+  local gates (typecheck 5/5, test 3/3, build 2/2) as the only evidence.
 
 ## Watch List
 
@@ -28,7 +30,8 @@ lock:
 
 ## Uncommitted Changes (health signal)
 
-- 2026-10-02 bootstrap: see High Priority — convergence PRs being opened today.
+- 2026-10-02 bootstrap: ✅ resolved — 0 dirty files. Working tree converged into PRs #1/#2.
+  Keep this section at zero; triage flags regressions here.
 
 ## Recent Noise (ignored this run)
 
