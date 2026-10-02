@@ -36,7 +36,7 @@ interface Message {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("[ReachOS] Extension installed");
+  console.log("[TopDiggX] Extension installed");
 });
 
 chrome.runtime.onMessage.addListener(

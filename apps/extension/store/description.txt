@@ -1,4 +1,4 @@
-ReachOS - Know your reach before you post.
+TopDiggX - Know your reach before you post.
 
 Open-source Chrome extension that scores your tweets in real time against 36 algorithm-research-backed rules, predicts your reach, and shows you exactly how to improve it. BYOK (Bring Your Own Keys) - fully self-hostable.
 
@@ -30,7 +30,7 @@ BYOK (Bring Your Own Keys): Deploy your own API server or use the hosted instanc
 
 --- HOW IT WORKS ---
 
-1. Install ReachOS and open X.com
+1. Install TopDiggX and open X.com
 2. Start composing a tweet - score appears instantly
 3. Check the Reach Forecast to see predicted impressions
 4. Use What-If Scenarios to optimize before posting

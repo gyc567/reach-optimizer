@@ -2,8 +2,7 @@ import { getLocale } from '@lib/i18n-server';
 import { LanguageProvider } from '@lib/i18n-client';
 
 export const metadata = {
-  // TopDiggX is the user-facing brand; ReachOS is the system name (kept
-  // in package names, repo, JWT cookie). Default to the brand here so
+  // TopDiggX is the user-facing brand. Default to the brand here so
   // client-component pages (scorer, analyze, dashboard) get a sensible
   // title without each having to export their own metadata.
   title: {

@@ -1,10 +1,10 @@
-# ReachOS Privacy Policy
+# TopDiggX Privacy Policy
 
 **Last updated: April 3, 2026**
 
-## What ReachOS Does
+## What TopDiggX Does
 
-ReachOS is an open-source browser extension that analyzes tweet text you type on X.com and provides a Reach Score with optimization suggestions. It works primarily on your device. Server-side AI features are optional and use your own configured server (BYOK).
+TopDiggX is an open-source browser extension that analyzes tweet text you type on X.com and provides a Reach Score with optimization suggestions. It works primarily on your device. Server-side AI features are optional and use your own configured server (BYOK).
 
 ## What We Collect
 
@@ -26,7 +26,7 @@ ReachOS is an open-source browser extension that analyzes tweet text you type on
 
 ## Self-Hosted Architecture
 
-ReachOS is fully open source (MIT license). You can:
+TopDiggX is fully open source (MIT license). You can:
 - Use it with local scoring only (no server needed, 36 rules run on your device)
 - Deploy your own API server and point the extension to it
 - Inspect all source code at github.com/AytuncYildizli/reach-optimizer
@@ -40,7 +40,7 @@ ReachOS is fully open source (MIT license). You can:
 
 ## Your Rights
 
-- You can use ReachOS without any account or server (local scoring is fully functional)
+- You can use TopDiggX without any account or server (local scoring is fully functional)
 - You can uninstall the extension at any time to stop all data processing
 - All data is under your control — self-host for full ownership
 

@@ -50,7 +50,7 @@ export function lockPostedScore(text: string, score: number): void {
   if (normalized !== exact) {
     postedScores.set(normalized, score);
   }
-  console.log("[ReachOS] Score locked for post:", { score, textLen: text.length });
+  console.log("[TopDiggX] Score locked for post:", { score, textLen: text.length });
 }
 
 // X-Ray tiers aligned with v3.0 weights (baseScore 30, wider distribution)
@@ -116,7 +116,7 @@ function createScorePill(score: number, _tier: string): HTMLElement {
   pill.setAttribute("data-reachos-xray", "true");
 
   const span = document.createElement("span");
-  span.title = `ReachOS X-Ray: ${score}/100 (${xrayTier.label})`;
+  span.title = `TopDiggX X-Ray: ${score}/100 (${xrayTier.label})`;
   Object.assign(span.style, {
     display: "inline-flex",
     alignItems: "center",
@@ -237,7 +237,7 @@ function scoreTweet(tweetEl: HTMLElement): void {
     e.stopPropagation();
     e.preventDefault();
     console.log(
-      `[ReachOS X-Ray] Score: ${score}/100 (${tier})`,
+      `[TopDiggX X-Ray] Score: ${score}/100 (${tier})`,
       {
         text: text.substring(0, 80) + "...",
         locked: locked !== undefined,
@@ -297,5 +297,5 @@ export function setupXRayMode(): void {
     { passive: true }
   );
 
-  console.log("[ReachOS] X-Ray Mode active — scoring timeline tweets");
+  console.log("[TopDiggX] X-Ray Mode active — scoring timeline tweets");
 }

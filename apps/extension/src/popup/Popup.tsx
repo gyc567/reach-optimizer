@@ -100,7 +100,7 @@ function MyTweets() {
   if (error) {
     return (
       <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 12 }}>
-        No tracked tweets yet. Post a tweet while ReachOS is active to start tracking.
+        No tracked tweets yet. Post a tweet while TopDiggX is active to start tracking.
       </div>
     );
   }
@@ -110,7 +110,7 @@ function MyTweets() {
       <div style={{ padding: 20, textAlign: 'center' }}>
         <div style={{ color: '#666', fontSize: 13, marginBottom: 8 }}>No tracked tweets yet</div>
         <div style={{ color: '#999', fontSize: 11, lineHeight: 1.5 }}>
-          Post a tweet while ReachOS is active and it will appear here with real metrics.
+          Post a tweet while TopDiggX is active and it will appear here with real metrics.
         </div>
       </div>
     );
@@ -630,7 +630,7 @@ export function Popup() {
   if (loading) {
     return (
       <div style={{ padding: 20, textAlign: 'center' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>ReachOS</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>TopDiggX</div>
         <div style={{ color: '#666', fontSize: 13 }}>Loading...</div>
       </div>
     );
@@ -677,7 +677,7 @@ export function Popup() {
         <SettingsTab />
       ) : (
         <div style={{ padding: 20 }}>
-          <h1 style={{ fontSize: 18, margin: '0 0 4px', fontWeight: 800 }}>ReachOS</h1>
+          <h1 style={{ fontSize: 18, margin: '0 0 4px', fontWeight: 800 }}>TopDiggX</h1>
           <p style={{ fontSize: 12, color: '#666', margin: '0 0 8px' }}>
             Open-source Reach Optimizer
           </p>
@@ -693,7 +693,7 @@ export function Popup() {
               Active
             </div>
             <div style={{ fontSize: 11, color: '#00754d', lineHeight: 1.5 }}>
-              Open X.com and start typing a tweet. ReachOS scores your content in real-time using 36 algorithm-backed rules.
+              Open X.com and start typing a tweet. TopDiggX scores your content in real-time using 36 algorithm-backed rules.
             </div>
           </div>
 

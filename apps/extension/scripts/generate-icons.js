@@ -1,4 +1,4 @@
-// Generate simple ReachOS icons as data URIs in an HTML file
+// Generate simple TopDiggX icons as data URIs in an HTML file
 // For now, create minimal valid PNG files
 const fs = require('fs');
 const path = require('path');
