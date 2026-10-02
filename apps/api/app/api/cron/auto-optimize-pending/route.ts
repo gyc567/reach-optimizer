@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@lib/env';
 import { verifyCronAuth } from '@lib/cron-auth';
 import { ScoreEngine } from '@reach/rules-engine';
+import { anthropicFetch, extractText } from '@reach/ai-checks';
 import pg from 'pg';
 
 export const runtime = 'nodejs';
@@ -127,18 +128,11 @@ async function generateVariations(
   round: number,
 ): Promise<string[]> {
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        temperature: 0.8 + round * 0.05,
-        system: `You are an elite X/Twitter ghostwriter. You rewrite tweets to maximize reach.
+    // Use shared wrapper so ANTHROPIC_BASE_URL is honoured
+    const response = await anthropicFetch(apiKey, {
+      maxTokens: 1024,
+      temperature: 0.8 + round * 0.05,
+      system: `You are an elite X/Twitter ghostwriter. You rewrite tweets to maximize reach.
 
 WINNING PROFILE (from 200-experiment autoresearch optimization):
 - Tone: provocative and bold (0.77), NOT casual
@@ -150,10 +144,10 @@ WINNING PROFILE (from 200-experiment autoresearch optimization):
 - Style: NO emoji, NO hashtags, sound human not AI
 
 Keep EXACT same facts. Return ONLY valid JSON.`,
-        messages: [
-          {
-            role: 'user',
-            content: `Round ${round}. Rewrite this tweet 3 ways using the winning profile. RULES:
+      messages: [
+        {
+          role: 'user',
+          content: `Round ${round}. Rewrite this tweet 3 ways using the winning profile. RULES:
 1. Keep EXACT same facts — do NOT invent information
 2. Each must be COMPLETE tweet, 2 sentences max, under 280 chars
 3. Make it provocative and bold — take a clear stance
@@ -169,15 +163,12 @@ V3: Contrarian take + strong statement ending
 Tweet: "${seedText.replace(/"/g, '\\"')}"
 
 Return JSON: {"suggestions": ["v1", "v2", "v3"]}`,
-          },
-        ],
-      }),
+        },
+      ],
     });
 
-    if (!response.ok) return [];
-    const data = await response.json();
-    const raw = data.content?.[0]?.text ?? '{}';
-    const cleaned = raw
+    const text = extractText(response) ?? '{}';
+    const cleaned = text
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();

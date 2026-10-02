@@ -22,6 +22,9 @@ export const env = {
   get ANTHROPIC_API_KEY() {
     return process.env.ANTHROPIC_API_KEY ?? '';
   },
+  get ANTHROPIC_BASE_URL() {
+    return process.env.ANTHROPIC_BASE_URL ?? '';
+  },
   get APP_URL() {
     return process.env.APP_URL ?? 'http://localhost:3100';
   },

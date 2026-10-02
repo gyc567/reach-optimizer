@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@lib/auth';
 import { applyRateLimit } from '@lib/middleware';
 import { env } from '@lib/env';
+import { anthropicFetch, extractText } from '@reach/ai-checks';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -34,22 +35,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
-        temperature: 0.7,
-        system: 'You generate engaging reply templates for X/Twitter. Return ONLY valid JSON.',
-        messages: [
-          {
-            role: 'user',
-            content: `Generate 3 short, engaging reply templates that a creator can use to respond to followers' comments on their tweets. These should:
+    // Use the shared wrapper so ANTHROPIC_BASE_URL is honoured
+    // (MiniMaxi / alternative Anthropic-compatible endpoint).
+    const response = await anthropicFetch(env.ANTHROPIC_API_KEY, {
+      maxTokens: 512,
+      temperature: 0.7,
+      system: 'You generate engaging reply templates for X/Twitter. Return ONLY valid JSON.',
+      messages: [
+        {
+          role: 'user',
+          content: `Generate 3 short, engaging reply templates that a creator can use to respond to followers' comments on their tweets. These should:
 - Be conversational and genuine (not robotic)
 - Encourage further discussion (reply-to-reply chains are worth 150x in the algorithm)
 - Be under 100 characters each
@@ -58,18 +53,12 @@ export async function POST(request: NextRequest) {
 Context: ${body.context || 'General tweet engagement'}
 
 Return JSON: {"suggestions": ["reply1", "reply2", "reply3"]}`,
-          },
-        ],
-      }),
+        },
+      ],
     });
 
-    if (!response.ok) {
-      throw new Error(`Anthropic ${response.status}`);
-    }
-
-    const data = await response.json();
-    const raw = data.content?.[0]?.text ?? '{}';
-    const cleaned = raw
+    const text = extractText(response) ?? '{}';
+    const cleaned = text
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();

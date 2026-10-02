@@ -3,6 +3,7 @@ import { verifyToken } from '@lib/auth';
 import { applyRateLimit } from '@lib/middleware';
 import { prisma } from '@lib/db';
 import { env } from '@lib/env';
+import { anthropicFetch, extractText } from '@reach/ai-checks';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -63,28 +64,17 @@ Return ONLY a JSON array with this exact format, no other text:
 [{"text": "tweet text here", "predictedScore": 85, "topic": "topic category"}]`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        temperature: 0.7,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
+    // Use the shared wrapper so ANTHROPIC_BASE_URL is honoured
+    // (MiniMaxi / alternative Anthropic-compatible endpoint).
+    const response = await anthropicFetch(env.ANTHROPIC_API_KEY, {
+      model: 'claude-sonnet-4-20250514',
+      maxTokens: 1024,
+      temperature: 0.7,
+      system: 'You are a Twitter/X viral content strategist. Return ONLY a JSON array.',
+      messages: [{ role: 'user', content: userPrompt }],
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Anthropic API ${response.status}: ${errText.substring(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const raw = data.content?.[0]?.text ?? '';
+    const raw = extractText(response) ?? '';
 
     // Parse JSON from response (handle markdown code blocks)
     let jsonStr = raw.trim();

@@ -1,5 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createClaudeClient, analyzeWithClaude, parseClaudeJSON } from './claude-client';
+import { anthropicFetch, extractText } from './anthropic-fetch';
+import { parseSuggestionsField } from './safe-parse-json';
 import { detectSlopHeuristic, type SlopResult } from './slop-detector';
 import { buildSlopAnalysisPrompt } from './prompts/slop-analysis';
 import { buildHookQualityPrompt, type HookQualityResult } from './prompts/hook-quality';
@@ -56,34 +58,17 @@ export class AIAnalyzer {
   async generateHookSuggestions(text: string, lang?: 'tr' | 'en'): Promise<string[]> {
     const prompt = buildHookSuggestionsPrompt(text, lang);
 
-    // Use fetch directly (SDK has connection issues on Vercel serverless)
+    // Use the shared fetch wrapper so ANTHROPIC_BASE_URL is honoured
+    // (MiniMaxi / other Anthropic-compatible endpoints).
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 512,
-          temperature: 0.3,
-          system: prompt.system,
-          messages: [{ role: 'user', content: prompt.user }],
-        }),
+      const response = await anthropicFetch(this.apiKey, {
+        system: prompt.system,
+        messages: [{ role: 'user', content: prompt.user }],
+        maxTokens: 512,
+        temperature: 0.3,
       });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Anthropic API ${response.status}: ${errText.substring(0, 200)}`);
-      }
-
-      const data = await response.json();
-      const raw = data.content?.[0]?.text ?? '';
-      const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const result = JSON.parse(cleaned) as { suggestions: string[] };
-      return result?.suggestions ?? [];
+      const raw = extractText(response) ?? '';
+      return parseSuggestionsField(raw);
     } catch (error) {
       throw new Error('Claude hook suggestions failed: ' + (error instanceof Error ? error.message : String(error)));
     }

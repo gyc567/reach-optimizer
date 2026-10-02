@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 export function createClaudeClient(apiKey: string): Anthropic {
-  return new Anthropic({ apiKey });
+  // The SDK reads ANTHROPIC_BASE_URL itself, but we also support an explicit
+  // baseURL here so callers that want to pin a different endpoint for a
+  // single client (API keys) (e.g. tests) can do so.
+  const baseURL = process.env.ANTHROPIC_BASE_URL || undefined;
+  return new Anthropic({ apiKey, ...(baseURL ? { baseURL } : {}) });
 }
 
 export interface ClaudeAnalysisOptions {
