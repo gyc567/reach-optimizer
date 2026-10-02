@@ -11,7 +11,7 @@ instead of a human typing the next prompt. Levels: **L1 report → L2 assisted �
 | Loop | Level | Cadence | Verifier | Stage (2026-10-02) |
 |------|-------|---------|----------|--------------------|
 | E0 minimal-ci | — | push/PR | self | ✅ landed (this bootstrap) |
-| E1 daily-triage | L1 | 1d weekdays | — | ⏳ queued — needs its Action (see below) |
+| E1 daily-triage | L1 | 1d weekdays 00:17 UTC | — (script-only, no LLM) | ✅ landed — `scripts/triage.mjs` + `daily-triage.yml` |
 | E2 ci-sweeper | L2 | CI-failure event + 1d | `pnpm typecheck && pnpm test && pnpm build` in worktree | not started |
 | E3 dependency-sweeper | L2 | weekly (dependabot rhythm) | patch-only + full verify in worktree | not started (dependabot.yml landed) |
 | E4 pr-babysitter | L2 | PR open/sync + 15m | review comment + worktree fix suggestion; **never merges** | not started |
@@ -68,10 +68,10 @@ pnpm typecheck && pnpm test && pnpm build  # the E2 verifier chain
 
 ## Evolution / next automation candidates
 
-1. E1 daily-triage Action (writes STATE.md from open PRs + issues + CI status + uncommitted-change count)
-2. API contract snapshot tests (`apps/api/__tests__/contract/`) — becomes D1/E4 verifier gate
-3. D2 first L1 report: diff `learn-weights` global suggestions vs current weights.json
-4. Calibration-history storage for D4 (schema addition → human gate)
+1. API contract snapshot tests (`apps/api/__tests__/contract/`) — becomes D1/E4 verifier gate
+2. D2 first L1 report: diff `learn-weights` global suggestions vs current weights.json
+3. Calibration-history storage for D4 (schema addition → human gate)
+4. E2 ci-sweeper workflow reacting to failed `ci` runs (diagnosis comment only)
 
 Changes to this file go through normal PR review. *This file is both documentation and
 the seed for the loops that maintain the repo.*
