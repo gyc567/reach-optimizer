@@ -1,6 +1,7 @@
 <p align="center">
-  <h1 align="center">ReachOS</h1>
+  <h1 align="center">TopDiggX</h1>
   <p align="center">Open-source reach optimizer for X/Twitter. Know your reach before you post.</p>
+  <p align="center"><sub>System name: ReachOS — package names, repo, internal docs.</sub></p>
 </p>
 
 <p align="center">
@@ -14,17 +15,19 @@
 
 ---
 
-ReachOS is a Chrome extension that scores your tweets in real time against the 22-signal taxonomy [xAI published on 2026-05-15](https://github.com/xai-org/x-algorithm), predicts your reach, and shows you exactly how to improve it. BYOK (Bring Your Own Keys) — fully self-hostable.
+> **Naming.** The user-facing brand is **TopDiggX** (Chrome Web Store listing, in-product chrome, README title). The system / platform name is **ReachOS** — kept as the repo (`reach-optimizer`), package names (`@reach/api`, `@reach/rules-engine`, `@reach/ai-checks`), JWT cookie (`reachos_token`), and in technical commit messages. Don't mix them in user-visible strings.
+
+TopDiggX is a Chrome extension that scores your tweets in real time against the 22-signal taxonomy [xAI published on 2026-05-15](https://github.com/xai-org/x-algorithm), predicts your reach, and shows you exactly how to improve it. BYOK (Bring Your Own Keys) — fully self-hostable.
 
 ```
 You type a tweet.
-ReachOS says: "This will reach ~14,200 people.
+TopDiggX says: "This will reach ~14,200 people.
                Add a curiosity gap before the link → 16,800.
                Add an image → 19,600.
                Both → 23,200."
 ```
 
-> **v4.0 (May 2026):** ReachOS realigned to xAI's published Phoenix-era algorithm. Outbound links are no longer penalized; instead, descriptive link anchors with a curiosity gap drive the new `click` signal. See [CHANGELOG.md](CHANGELOG.md) for the full migration notes.
+> **v4.0 (May 2026):** TopDiggX realigned to xAI's published Phoenix-era algorithm. Outbound links are no longer penalized; instead, descriptive link anchors with a curiosity gap drive the new `click` signal. See [CHANGELOG.md](CHANGELOG.md) for the full migration notes.
 
 ## Features
 

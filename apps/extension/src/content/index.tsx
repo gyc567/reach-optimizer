@@ -10,7 +10,7 @@ import { setupXRayMode, lockPostedScore } from "./xray-mode";
 import { ScoreOverlay } from "./ScoreOverlay";
 import { OVERLAY_STYLES } from "./styles";
 
-console.log("[ReachOS] Content script loaded");
+console.log("[TopDiggX] Content script loaded");
 
 // ---------------------------------------------------------------------------
 // Score engine (all client-side rules)
@@ -224,7 +224,7 @@ function doServerRequest(text: string): void {
       (response) => {
         // Guard against extension context invalidated (SPA navigation, extension reload)
         if (chrome.runtime.lastError) {
-          console.warn("[ReachOS] Extension context lost:", chrome.runtime.lastError.message);
+          console.warn("[TopDiggX] Extension context lost:", chrome.runtime.lastError.message);
           isServerPending = false;
           if (setGlobalServerPending) setGlobalServerPending(false);
           return;
@@ -247,13 +247,13 @@ function doServerRequest(text: string): void {
           try {
             chrome.runtime.sendMessage({ type: "UPDATE_BADGE", score: merged.score });
           } catch { /* badge update is non-critical */ }
-          console.log("[ReachOS] Server analysis merged", {
+          console.log("[TopDiggX] Server analysis merged", {
             aiSlopScore: merged.aiSlopScore,
             score: merged.score,
           });
         } else {
           if (setGlobalServerError) setGlobalServerError(true);
-          console.warn("[ReachOS] Server analysis failed or stale", response);
+          console.warn("[TopDiggX] Server analysis failed or stale", response);
         }
       },
     );
@@ -455,7 +455,7 @@ function onComposerTextChange(_composerEl: HTMLElement, text: string): void {
 
   // Log media detection for debugging
   if (hasMedia) {
-    console.log("[ReachOS] Media detected in composer", media.mediaType);
+    console.log("[TopDiggX] Media detected in composer", media.mediaType);
   }
 
   // 1b. Detect quote-tweet attachment so v4's quoted_click and quoted_vqv
@@ -490,7 +490,7 @@ function onComposerTextChange(_composerEl: HTMLElement, text: string): void {
     }
   })();
   if (quote.isQuoteTweet) {
-    console.log("[ReachOS] Quote-tweet detected, quotedMediaType=", quote.quotedMediaType);
+    console.log("[TopDiggX] Quote-tweet detected, quotedMediaType=", quote.quotedMediaType);
   }
 
   // 2. Run client rules immediately
@@ -595,7 +595,7 @@ function init(): void {
   setupReplyCoach();
   setupXRayMode();
 
-  console.log("[ReachOS] Overlay mounted, composer detector started, post tracker active, reply coach active, X-Ray mode active");
+  console.log("[TopDiggX] Overlay mounted, composer detector started, post tracker active, reply coach active, X-Ray mode active");
 }
 
 if (document.readyState === "loading") {

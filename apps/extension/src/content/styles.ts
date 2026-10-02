@@ -1,5 +1,5 @@
 /**
- * Shadow DOM styles for the ReachOS score overlay panel.
+ * Shadow DOM styles for the TopDiggX score overlay panel.
  * Dark theme matching X.com's design language.
  */
 export const OVERLAY_STYLES = `

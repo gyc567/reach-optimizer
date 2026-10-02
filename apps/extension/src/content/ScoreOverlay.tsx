@@ -1008,7 +1008,7 @@ export function ScoreOverlay({ analysis, isServerPending, serverError, currentTe
         <div className="reachos-header">
           <div className="reachos-logo">
             <div className="reachos-dot" />
-            ReachOS
+            TopDiggX
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <div className="reachos-badge">Beta</div>
