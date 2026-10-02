@@ -37,6 +37,14 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        # `typecheck` is `tsc --noEmit` and lib/db.ts imports PrismaClient from
+        # the *generated* @prisma/client — a fresh checkout has none, and the
+        # TS2305 import failure cascades into hundreds of implicit-any TS7006s.
+        # `next build` generates it via the api build script, but typecheck runs
+        # first, so generate explicitly. First main run 36953175802 failed here.
+        run: pnpm --filter @reach/api exec prisma generate
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -45,3 +53,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: ci-sweeper selftest
+        run: node scripts/ci-sweeper.mjs --selftest
