@@ -57,9 +57,15 @@ importers:
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.14
+      dotenv:
+        specifier: ^18.0.5
+        version: 18.0.5
       prisma:
         specifier: ^6.0.0
         version: 6.19.2(typescript@5.9.3)
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@22.19.15)
 
   apps/extension:
     dependencies:
@@ -1014,6 +1020,11 @@ packages:
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
     engines: {node: '>=12'}
+
+  dotenv@18.0.5:
+    resolution: {integrity: sha512-aBrGvt6KhjxbEnatqMWOMidftwsrCiCvqh1yNIGB9QyF0J+VcWkKDMsvYOEm7ZS82oiV+BT1sTOtIlAmUlTpwQ==}
+    engines: {node: '>=12'}
+    hasBin: true
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -2425,6 +2436,8 @@ snapshots:
       domhandler: 5.0.3
 
   dotenv@16.6.1: {}
+
+  dotenv@18.0.5: {}
 
   dunder-proto@1.0.1:
     dependencies:

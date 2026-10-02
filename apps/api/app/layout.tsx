@@ -1,15 +1,28 @@
+import { getLocale } from '@lib/i18n-server';
+import { LanguageProvider } from '@lib/i18n-client';
+
 export const metadata = {
-  title: 'ReachOS API',
+  // TopDiggX is the user-facing brand; ReachOS is the system name (kept
+  // in package names, repo, JWT cookie). Default to the brand here so
+  // client-component pages (scorer, analyze, dashboard) get a sensible
+  // title without each having to export their own metadata.
+  title: {
+    default: 'TopDiggX',
+    template: '%s · TopDiggX',
+  },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang={locale} dir="ltr">
+      <body>
+        <LanguageProvider initialLocale={locale}>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }
