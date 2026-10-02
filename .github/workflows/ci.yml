@@ -53,3 +53,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: ci-sweeper selftest
+        run: node scripts/ci-sweeper.mjs --selftest

@@ -1,0 +1,60 @@
+name: loop-ci-sweeper
+
+# E2 — report-only L2 loop. Whenever `ci` completes with failure, diagnose the
+# failed jobs' logs (GitHub API only — never checks out PR code), classify the
+# failure, and post/update ONE diagnosis comment on the PR (or head commit).
+# It never edits product code and never contacts an LLM.
+# Manual trigger: Actions → loop-ci-sweeper → Run workflow (optional run_id).
+
+on:
+  workflow_run:
+    workflows: ["ci"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "CI run id to diagnose (blank = latest failed ci run)"
+        required: false
+
+permissions:
+  actions: read
+  checks: read
+  contents: write # commit loop-run-log.md back
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: e2-ci-sweeper
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    # workflow_run fires for every conclusion; only failures need a sweep.
+    # workflow_dispatch always runs (the script validates the target run).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sweep
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SWEEP_RUN_ID: ${{ github.event.inputs.run_id }}
+        run: node scripts/ci-sweeper.mjs
+
+      - name: Publish run log
+        run: |
+          git config user.name "loop-triage[bot]"
+          git config user.email "loop-triage[bot]@users.noreply.github.com"
+          git add loop-run-log.md
+          if git diff --cached --quiet; then
+            echo "No log changes"
+          else
+            git commit -m "chore(loop): E2 ci-sweeper run $(date -u +%FT%TZ)"
+            git push
+          fi

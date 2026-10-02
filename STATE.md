@@ -10,12 +10,14 @@ lock:
 
 ## High Priority (loop is acting or waiting on human)
 
-- ✅ clean — no human action required today.
+- 🔴 main CI red — first post-bootstrap run (36953175802) failed at `Typecheck`: fresh
+  checkouts have no generated `@prisma/client`, so `lib/db.ts` TS2305 cascades into
+  implicit-any TS7006s. Fix (add `prisma generate` step to ci.yml) + E2 ci-sweeper
+  landed together in the E2 PR; main goes green when it merges.
 
 ## Watch List
 
-- [PR #2](https://github.com/gyc567/reach-optimizer/pull/2) checks: pending — "feat(reachos): web tweet scorer + shared forecast + Anthropic-compatible adapter (web plan v2)"
-- [PR #1](https://github.com/gyc567/reach-optimizer/pull/1) checks: pending — "chore(loop): bootstrap loop-engineering framework (E0 CI, registry, gates, skills)"
+- [PR #2](https://github.com/gyc567/reach-optimizer/pull/2) open — web tweet scorer (web plan v2 Phase 0–3); needs rebase onto new main, then merge after E2 PR (CI must be green first).
 
 ## Uncommitted Changes (health signal)
 
