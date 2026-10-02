@@ -31,6 +31,11 @@ jobs:
           node-version: 22
 
       - name: Triage
+        env:
+          # `permissions:` scopes the token, but it still must be passed into
+          # the step explicitly — without this the script sees no credential
+          # (local runs fall back to `gh auth token`, Actions has none).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/triage.mjs
 
       - name: Publish state
