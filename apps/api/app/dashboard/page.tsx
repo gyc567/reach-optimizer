@@ -1,10 +1,15 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@lib/db';
 import { verifyToken } from '@lib/auth';
+import { getLocale } from '@lib/i18n-server';
+import { t } from '@lib/i18n';
 import { CopyButton } from './CopyButton';
+import { StatCard } from '@components/StatCard';
+import { TimingHeatmap } from '@components/TimingHeatmap';
+import { LanguageToggle } from '@components/LanguageToggle';
 
 export const metadata = {
-  title: 'ReachOS Dashboard',
+  title: 'Dashboard',
   description: 'Tweet analytics and optimization dashboard',
 };
 
@@ -97,6 +102,8 @@ async function getAuthenticatedUserId(): Promise<string | null> {
 
 export default async function DashboardPage() {
   const userId = await getAuthenticatedUserId();
+  const locale = await getLocale();
+  const $ = (k: string) => t(locale, k);
 
   // Auth gate: no valid token => show login prompt
   if (!userId) {
@@ -106,7 +113,7 @@ export default async function DashboardPage() {
           <div style={styles.headerInner}>
             <div style={styles.logoRow}>
               <span style={styles.logoDot} />
-              <h1 style={styles.logoText}>ReachOS Dashboard</h1>
+              <h1 style={styles.logoText}>TopDiggX Dashboard</h1>
             </div>
             <span style={styles.betaBadge}>BETA</span>
           </div>
@@ -124,7 +131,7 @@ export default async function DashboardPage() {
               fontWeight: 700,
               margin: '0 0 12px 0',
             }}>
-              ReachOS Dashboard
+              TopDiggX Dashboard
             </h2>
             <p style={{
               color: colors.textSecondary,
@@ -154,7 +161,7 @@ export default async function DashboardPage() {
         </main>
         <footer style={styles.footer}>
           <span style={{ color: colors.textSecondary, fontSize: 13 }}>
-            ReachOS - Open-source Reach Optimizer
+            TopDiggX - Open-source Reach Optimizer
           </span>
         </footer>
       </div>
@@ -217,7 +224,7 @@ export default async function DashboardPage() {
         <div style={styles.headerInner}>
           <div style={styles.logoRow}>
             <span style={styles.logoDot} />
-            <h1 style={styles.logoText}>ReachOS Dashboard</h1>
+            <h1 style={styles.logoText}>TopDiggX Dashboard</h1>
           </div>
           <span style={styles.betaBadge}>BETA</span>
         </div>
@@ -263,7 +270,7 @@ export default async function DashboardPage() {
           ) : totalTweets === 0 ? (
             <div style={styles.emptyState}>
               <p style={{ color: colors.textSecondary, margin: 0 }}>
-                No tracked tweets yet. Use the ReachOS extension to start
+                No tracked tweets yet. Use the TopDiggX extension to start
                 tracking your posts.
               </p>
             </div>
@@ -354,7 +361,7 @@ export default async function DashboardPage() {
       {/* Footer */}
       <footer style={styles.footer}>
         <span style={{ color: colors.textSecondary, fontSize: 13 }}>
-          ReachOS - Tweet Reach Optimization Platform
+          TopDiggX - Tweet Reach Optimization Platform
         </span>
       </footer>
     </div>
@@ -387,32 +394,6 @@ async function fetchUserAnalyses(userId: string) {
 
 // -- Sub-components --
 
-function StatCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-}) {
-  return (
-    <div style={styles.statCard}>
-      <span style={{ color: colors.textSecondary, fontSize: 13 }}>{label}</span>
-      <span
-        style={{
-          color: color ?? colors.textPrimary,
-          fontSize: 28,
-          fontWeight: 700,
-          lineHeight: 1.2,
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
 function MetricPill({
   icon,
   label,
@@ -430,136 +411,7 @@ function MetricPill({
   );
 }
 
-// -- Timing Heatmap (static research data rendered at UTC) --
-
-const TIMING_HEATMAP_UTC: number[][] = (() => {
-  const grid: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
-  const windows: Array<{ day: number; hour: number; intensity: number }> = [
-    // Tuesday peak
-    { day: 2, hour: 9, intensity: 100 },
-    { day: 2, hour: 10, intensity: 70 },
-    { day: 2, hour: 11, intensity: 70 },
-    // Wednesday
-    { day: 3, hour: 9, intensity: 100 },
-    { day: 3, hour: 10, intensity: 100 },
-    { day: 3, hour: 11, intensity: 70 },
-    { day: 3, hour: 12, intensity: 70 },
-    { day: 3, hour: 13, intensity: 40 },
-    // Thursday
-    { day: 4, hour: 9, intensity: 100 },
-    { day: 4, hour: 10, intensity: 100 },
-    { day: 4, hour: 11, intensity: 70 },
-    { day: 4, hour: 12, intensity: 70 },
-    { day: 4, hour: 13, intensity: 40 },
-    // Friday
-    { day: 5, hour: 9, intensity: 100 },
-    { day: 5, hour: 10, intensity: 70 },
-    { day: 5, hour: 11, intensity: 70 },
-    { day: 5, hour: 12, intensity: 40 },
-    { day: 5, hour: 13, intensity: 40 },
-    // Monday (lighter)
-    { day: 1, hour: 9, intensity: 40 },
-    { day: 1, hour: 10, intensity: 40 },
-    { day: 1, hour: 13, intensity: 40 },
-  ];
-  for (const w of windows) {
-    grid[w.day][w.hour] = w.intensity;
-  }
-  return grid;
-})();
-
-const HEATMAP_DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const HEATMAP_DISPLAY_HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-
-function heatColor(intensity: number): string {
-  if (intensity >= 80) return colors.green;
-  if (intensity >= 50) return colors.green + '88';
-  if (intensity >= 20) return colors.green + '44';
-  return 'transparent';
-}
-
-function TimingHeatmap() {
-  return (
-    <div style={{ overflowX: 'auto' as const }}>
-      <table style={{ borderCollapse: 'collapse' as const, width: '100%', fontSize: 12 }}>
-        <thead>
-          <tr>
-            <th style={{ padding: '4px 8px', color: colors.textSecondary, textAlign: 'left' as const, fontSize: 11 }}></th>
-            {HEATMAP_DISPLAY_HOURS.map((h) => (
-              <th key={h} style={{
-                padding: '4px 2px',
-                color: colors.textSecondary,
-                fontSize: 10,
-                fontWeight: 500,
-                textAlign: 'center' as const,
-                minWidth: 32,
-              }}>
-                {h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {HEATMAP_DAY_LABELS.map((dayLabel, dayIdx) => (
-            <tr key={dayIdx}>
-              <td style={{
-                padding: '4px 8px',
-                color: colors.textSecondary,
-                fontSize: 11,
-                fontWeight: 600,
-                whiteSpace: 'nowrap' as const,
-              }}>
-                {dayLabel}
-              </td>
-              {HEATMAP_DISPLAY_HOURS.map((h) => {
-                const intensity = TIMING_HEATMAP_UTC[dayIdx][h];
-                return (
-                  <td key={h} style={{ padding: '2px' }}>
-                    <div
-                      style={{
-                        width: '100%',
-                        height: 20,
-                        borderRadius: 3,
-                        backgroundColor: intensity > 0 ? heatColor(intensity) : `${colors.border}66`,
-                        border: intensity >= 80 ? `1px solid ${colors.green}88` : '1px solid transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      title={`${dayLabel} ${h < 12 ? h + 'AM' : h === 12 ? '12PM' : (h - 12) + 'PM'} UTC — ${intensity >= 80 ? 'Peak' : intensity >= 50 ? 'Good' : intensity > 0 ? 'Okay' : 'Off-peak'}`}
-                    >
-                      {intensity >= 80 && (
-                        <span style={{ fontSize: 8, color: '#fff', fontWeight: 700 }}>P</span>
-                      )}
-                    </div>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 11, color: colors.textSecondary }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: colors.green, display: 'inline-block' }} />
-          Peak
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: colors.green + '88', display: 'inline-block' }} />
-          Good
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: colors.green + '44', display: 'inline-block' }} />
-          Okay
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: `${colors.border}66`, display: 'inline-block' }} />
-          Off-peak
-        </span>
-      </div>
-    </div>
-  );
-}
+// -- Timing Heatmap now imported from @/components/TimingHeatmap --
 
 // -- Styles --
 

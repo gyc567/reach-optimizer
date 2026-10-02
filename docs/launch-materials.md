@@ -1,11 +1,11 @@
-# ReachOS Launch Materials
+# TopDiggX Launch Materials
 
 ## Product Hunt
 
 **Tagline:** Open-source Grammarly for tweet reach — know your numbers before you post.
 
 **Description:**
-ReachOS is a Chrome extension that scores your tweets in real-time against the 22 signals xAI published in xai-org/x-algorithm (May 2026). It predicts how many people will see your tweet and shows exactly how to improve it with interactive What-If Scenarios.
+TopDiggX is a Chrome extension that scores your tweets in real-time against the 22 signals xAI published in xai-org/x-algorithm (May 2026). It predicts how many people will see your tweet and shows exactly how to improve it with interactive What-If Scenarios.
 
 Key features:
 - Real-time Reach Score (0-100) as you type
@@ -18,9 +18,9 @@ Key features:
 No account needed. 22 signal predictors run locally in your browser. AI features are optional and use your own API key.
 
 **Maker's First Comment:**
-Hey PH! I built ReachOS because I was tired of guessing whether a tweet would perform before posting it.
+Hey PH! I built TopDiggX because I was tired of guessing whether a tweet would perform before posting it.
 
-The scoring is based on the 22 signals xAI published in `xai-org/x-algorithm` on May 15, 2026 — `favorite`, `reply`, `retweet`, `quote`, the three `share_*` variants, `click`, `profile_click`, `follow_author`, `dwell`, and 11 more. ReachOS predicts the probability of each one from a single-file rule predictor.
+The scoring is based on the 22 signals xAI published in `xai-org/x-algorithm` on May 15, 2026 — `favorite`, `reply`, `retweet`, `quote`, the three `share_*` variants, `click`, `profile_click`, `follow_author`, `dwell`, and 11 more. TopDiggX predicts the probability of each one from a single-file rule predictor.
 
 The feature I'm most proud of is What-If Scenarios — it shows you in real-time what happens if you add a curiosity gap before a link, attach an image, or post at peak time. It turns optimization into a game.
 
@@ -41,7 +41,7 @@ Would love your feedback on the scoring model — we're actively adding new rule
 **Title:** I built an open-source Chrome extension that predicts your tweet's reach before you post
 
 **Body:**
-Hey r/SideProject! I just launched ReachOS — it's basically "Grammarly for reach."
+Hey r/SideProject! I just launched TopDiggX — it's basically "Grammarly for reach."
 
 It scores your tweets against 22 signal predictors from X's actual open-sourced algorithm, then predicts how many impressions you'll get. The coolest part is What-If Scenarios — it shows stuff like "remove this link and your reach goes up 52%."
 
@@ -80,7 +80,7 @@ Happy to discuss the architecture — the Shadow DOM + X.com DOM detection was t
 **Title:** Free tool that scores your tweets against X's actual algorithm signals before you post
 
 **Body:**
-I made a free Chrome extension called ReachOS that gives you a real-time score (0-100) for your tweets based on what X's algorithm actually rewards.
+I made a free Chrome extension called TopDiggX that gives you a real-time score (0-100) for your tweets based on what X's algorithm actually rewards.
 
 Some things it catches:
 - External links kill your reach (-30 to -50%). Move them to the first reply.
@@ -96,7 +96,7 @@ Free on Chrome Web Store, open source on GitHub. No account needed.
 
 ### r/InternetIsBeautiful
 
-**Title:** ReachOS: a Chrome extension that predicts how many people will see your tweet before you post it
+**Title:** TopDiggX: a Chrome extension that predicts how many people will see your tweet before you post it
 
 **Body:**
 It overlays a score panel on X.com that updates as you type. Shows a 0-100 score, predicted impressions, and interactive "what-if" scenarios (remove a link -> +52% reach, add image -> +38%).
@@ -109,10 +109,10 @@ Free, open source, no account needed: github.com/AytuncYildizli/reach-optimizer
 
 ## IndieHackers
 
-**Title:** I launched ReachOS — open-source "Grammarly for reach" on X/Twitter
+**Title:** I launched TopDiggX — open-source "Grammarly for reach" on X/Twitter
 
 **Body:**
-Hey IH! Just shipped ReachOS after a few weeks of building. It's a Chrome extension that scores your tweets against X's algorithm signals in real-time.
+Hey IH! Just shipped TopDiggX after a few weeks of building. It's a Chrome extension that scores your tweets against X's algorithm signals in real-time.
 
 The problem: I kept writing tweets that got zero engagement, deleting them, trying again. I wanted a way to know before posting.
 
@@ -138,14 +138,14 @@ Chrome Web Store: [link]
 ## Newsletter Submissions
 
 ### Ben's Bites / TLDR
-**Subject:** ReachOS — open-source Chrome extension that predicts tweet reach using X's algorithm signals
+**Subject:** TopDiggX — open-source Chrome extension that predicts tweet reach using X's algorithm signals
 
 **One-liner:** Free Chrome extension that scores your tweets against 22 signal predictors from X's open-sourced algorithm, predicts impressions, and shows what-if optimization scenarios. Fully open source, BYOK.
 
 **Link:** github.com/AytuncYildizli/reach-optimizer
 
 ### AI Tool Directories (ToolFinder, Futurepedia, TAAIFT)
-**Name:** ReachOS
+**Name:** TopDiggX
 **Category:** Social Media / Content Optimization
 **Pricing:** Free / Open Source
 **Description:** Chrome extension that scores tweets in real-time against 36 algorithm-research-backed rules. Predicts reach with what-if scenarios. AI slop detection and auto-optimize powered by Claude (BYOK). Fully open source and self-hostable.

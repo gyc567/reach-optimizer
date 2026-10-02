@@ -1,6 +1,6 @@
 /**
  * PostTracker — detects when the user clicks the "Post" button on X.com
- * and sends tracking data (tweet text + ReachOS score) to the API.
+ * and sends tracking data (tweet text + TopDiggX score) to the API.
  */
 
 import { incrementPostsToday } from './posts-today';
@@ -45,7 +45,7 @@ export function setupPostTracker(
             // Lock score for X-Ray consistency
             if (onPosted) onPosted(text, score);
 
-            console.log("[ReachOS] Tweet tracked:", {
+            console.log("[TopDiggX] Tweet tracked:", {
               score,
               predictedReach,
               textLength: text.length,

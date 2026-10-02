@@ -4,7 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**"],
-      "env": ["DATABASE_URL", "JWT_SECRET", "ANTHROPIC_API_KEY", "APP_URL"]
+      "env": ["DATABASE_URL", "JWT_SECRET", "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "APP_URL"]
     },
     "dev": {
       "cache": false,

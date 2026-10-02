@@ -3,7 +3,13 @@ import { verifyToken } from '@lib/auth';
 import { applyRateLimit } from '@lib/middleware';
 import { env } from '@lib/env';
 import { ScoreEngine } from '@reach/rules-engine';
-import { detectLanguage, getLanguageInstruction } from '@reach/ai-checks';
+import {
+  detectLanguage,
+  getLanguageInstruction,
+  anthropicFetch,
+  extractText,
+} from '@reach/ai-checks';
+import { parseSuggestionsField } from '@reach/ai-checks';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // Allow up to 60s for multiple rounds
@@ -121,18 +127,12 @@ async function generateVariations(apiKey: string, seedText: string, round: numbe
   // Lower temperature to reduce hallucination — 0.4 base, slight increase per round
   const temperature = Math.min(0.4 + (round * 0.05), 0.6);
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      temperature,
-      system: `You are an elite X/Twitter ghostwriter. You REARRANGE tweets to maximize reach. You NEVER add new information.
+  // Replaced hardcoded fetch with shared anthropicFetch so ANTHROPIC_BASE_URL
+  // (e.g. MiniMaxi-compatible endpoint) is honoured.
+  const response = await anthropicFetch(apiKey, {
+    maxTokens: 1024,
+    temperature,
+    system: `You are an elite X/Twitter ghostwriter. You REARRANGE tweets to maximize reach. You NEVER add new information.
 
 ${langInstruction}
 
@@ -152,9 +152,9 @@ ANTI-HALLUCINATION RULES (CRITICAL):
 - You are REARRANGING words, not creating new content
 
 Return ONLY valid JSON.`,
-      messages: [{
-        role: 'user',
-        content: `Round ${round}. Rewrite this tweet 3 ways in the SAME LANGUAGE as the original.
+    messages: [{
+      role: 'user',
+      content: `Round ${round}. Rewrite this tweet 3 ways in the SAME LANGUAGE as the original.
 
 ABSOLUTE RULES:
 1. Write in ${lang === 'tr' ? 'TURKISH' : 'ENGLISH'} — same language as the original
@@ -170,18 +170,13 @@ ${strategies}
 Original tweet: "${seedText.replace(/"/g, '\\"')}"
 
 Return JSON: {"suggestions": ["v1", "v2", "v3"]}`
-      }],
-    }),
+    }],
   });
 
-  if (!response.ok) return [];
-
   try {
-    const data = await response.json();
-    const raw = data.content?.[0]?.text ?? '{}';
-    const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const result = JSON.parse(cleaned);
-    return (result.suggestions || []).filter((s: string) => s && s.length > 10 && s.length <= 280);
+    const text = extractText(response) ?? '{}';
+    const suggestions = parseSuggestionsField(text);
+    return suggestions.filter((s) => s && s.length > 10 && s.length <= 280);
   } catch {
     return [];
   }

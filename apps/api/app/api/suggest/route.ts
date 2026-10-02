@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@lib/auth';
 import { applyRateLimit } from '@lib/middleware';
 import { env } from '@lib/env';
-import { detectLanguage, getLanguageInstruction } from '@reach/ai-checks';
+import {
+  detectLanguage,
+  getLanguageInstruction,
+  anthropicFetch,
+  extractText,
+} from '@reach/ai-checks';
+import { parseSuggestionsField } from '@reach/ai-checks';
 
 // Force Node.js runtime (Anthropic SDK needs net/tls)
 export const runtime = 'nodejs';
@@ -17,25 +23,17 @@ async function generateSelfReply(apiKey: string, tweetContent: string): Promise<
   const lang = detectLanguage(tweetContent);
   const langInstruction = getLanguageInstruction(lang);
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      temperature: 0.5,
-      system: `You write self-replies for X/Twitter. A self-reply is the FIRST reply the author posts under their own tweet. It MUST be directly related to the tweet content and in the SAME LANGUAGE.
+  const response = await anthropicFetch(apiKey, {
+    maxTokens: 512,
+    temperature: 0.5,
+    system: `You write self-replies for X/Twitter. A self-reply is the FIRST reply the author posts under their own tweet. It MUST be directly related to the tweet content and in the SAME LANGUAGE.
 
 ${langInstruction}
 
 Return ONLY valid JSON.`,
-      messages: [{
-        role: 'user',
-        content: `Write 1 self-reply for this tweet. STRICT RULES:
+    messages: [{
+      role: 'user',
+      content: `Write 1 self-reply for this tweet. STRICT RULES:
 
 1. SAME LANGUAGE as the original tweet — ${lang === 'tr' ? 'write in Turkish' : 'write in English'}
 2. The reply MUST reference a SPECIFIC concept, term, or claim from the original tweet
@@ -51,19 +49,11 @@ EXTRACT the main topic/claim from this tweet, then write a follow-up that ONLY m
 Original tweet: "${tweetContent.replace(/"/g, '\\"')}"
 
 Return JSON: {"suggestions": ["self-reply"]}`,
-      }],
-    }),
+    }],
   });
 
-  if (!response.ok) {
-    throw new Error(`Anthropic ${response.status}`);
-  }
-
-  const data = await response.json();
-  const raw = data.content?.[0]?.text ?? '{}';
-  const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  const result = JSON.parse(cleaned);
-  return result.suggestions || [];
+  const raw = extractText(response) ?? '{}';
+  return parseSuggestionsField(raw);
 }
 
 /**
@@ -73,18 +63,10 @@ async function generateHookSuggestions(apiKey: string, tweetContent: string): Pr
   const lang = detectLanguage(tweetContent);
   const langInstruction = getLanguageInstruction(lang);
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      temperature: 0.3,
-      system: `You are an elite X/Twitter ghostwriter. You REARRANGE tweets to maximize reach. You NEVER add new information.
+  const response = await anthropicFetch(apiKey, {
+    maxTokens: 512,
+    temperature: 0.3,
+    system: `You are an elite X/Twitter ghostwriter. You REARRANGE tweets to maximize reach. You NEVER add new information.
 
 ${langInstruction}
 
@@ -98,9 +80,9 @@ WINNING PROFILE (from 200-experiment autoresearch):
 - Style: NO emoji, NO hashtags, sound human not AI
 
 Return ONLY valid JSON.`,
-      messages: [{
-        role: 'user',
-        content: `Rewrite this tweet 3 ways. ABSOLUTE RULES:
+    messages: [{
+      role: 'user',
+      content: `Rewrite this tweet 3 ways. ABSOLUTE RULES:
 
 1. Write in ${lang === 'tr' ? 'TURKISH' : 'ENGLISH'} — SAME LANGUAGE as the original
 2. PRESERVE the original message, analogies, metaphors, and framing
@@ -120,19 +102,11 @@ Original tweet:
 "${tweetContent.replace(/"/g, '\\"')}"
 
 Return JSON: {"suggestions": ["v1", "v2", "v3"]}`,
-      }],
-    }),
+    }],
   });
 
-  if (!response.ok) {
-    throw new Error(`Anthropic ${response.status}`);
-  }
-
-  const data = await response.json();
-  const raw = data.content?.[0]?.text ?? '{}';
-  const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  const result = JSON.parse(cleaned);
-  return result.suggestions || [];
+  const raw = extractText(response) ?? '{}';
+  return parseSuggestionsField(raw);
 }
 
 export async function OPTIONS() {

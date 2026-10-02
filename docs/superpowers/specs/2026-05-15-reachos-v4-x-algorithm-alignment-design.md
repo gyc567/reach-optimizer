@@ -1,4 +1,4 @@
-# ReachOS v4.0 — X Algorithm Alignment (Phoenix Era)
+# TopDiggX v4.0 — X Algorithm Alignment (Phoenix Era)
 
 **Date:** 2026-05-15
 **Status:** Design — pending user review
@@ -12,7 +12,7 @@ On 2026-05-15 xAI published `x-algorithm` — a rewrite of X's recommendation pi
 - Zero outbound-link penalty, zero hashtag penalty, zero competitor penalty, zero language penalty anywhere in source.
 - No TweepCred / RealGraph / PageRank — author reputation is learned inside the transformer.
 
-ReachOS v3.0 was calibrated against the 2023 leak: it penalizes links, hashtags, language, competitors, and uses 5 reachOS-internal categories (hook / structure / engagement / penalty / bonus) that have no direct mapping to X's published signal names.
+TopDiggX v3.0 was calibrated against the 2023 leak: it penalizes links, hashtags, language, competitors, and uses 5 reachOS-internal categories (hook / structure / engagement / penalty / bonus) that have no direct mapping to X's published signal names.
 
 v4.0 realigns reachOS to the May-2026 taxonomy. The shift is from "what makes a tweet good" (reachOS framing) to "which X signals does this tweet trigger" (X framing).
 
@@ -26,7 +26,7 @@ v4.0 realigns reachOS to the May-2026 taxonomy. The shift is from "what makes a 
 ## Non-Goals
 
 - Mirroring the Phoenix transformer or any ML inference inside reachOS.
-- OON penalty, author-diversity decay, brand-safety BotMaker buckets — these are **viewer-side / serving-side** concerns. ReachOS is a composer tool and cannot influence them.
+- OON penalty, author-diversity decay, brand-safety BotMaker buckets — these are **viewer-side / serving-side** concerns. TopDiggX is a composer tool and cannot influence them.
 - Backward compatibility with v3.0 API response shape. v4.0 is a Big Bang release.
 
 ## Architecture
@@ -322,5 +322,5 @@ None blocking implementation. All resolved during brainstorming:
   - `home-mixer/scorers/ranking_scorer.rs:146-172` — final score formula
   - `home-mixer/scorers/author_diversity_scorer.rs:29-31` — diversity decay (not reachOS scope)
   - `home-mixer/scorers/oon_scorer.rs:20-23` — OON multiplier (not reachOS scope)
-- ReachOS v3.0 algorithm research — `~/.claude/projects/-Users-aytuncyildizli-session5/memory/reachos_algorithm_research.md`
-- ReachOS v3.0 source — `packages/rules-engine/src/`
+- TopDiggX v3.0 algorithm research — `~/.claude/projects/-Users-aytuncyildizli-session5/memory/reachos_algorithm_research.md`
+- TopDiggX v3.0 source — `packages/rules-engine/src/`

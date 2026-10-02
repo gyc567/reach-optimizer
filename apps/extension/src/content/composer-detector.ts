@@ -63,7 +63,7 @@ export class ComposerDetector {
 
     if (!composer || composer === this.currentComposer) return;
 
-    console.log('[ReachOS] Composer detected');
+    console.log('[TopDiggX] Composer detected');
 
     // Tear down previous listeners
     this.composerObserver?.disconnect();
@@ -132,7 +132,7 @@ export class ComposerDetector {
         });
 
         if (hasMediaChange) {
-          console.log('[ReachOS] Media change detected in composer container');
+          console.log('[TopDiggX] Media change detected in composer container');
           this.handleTextChange();
         }
       });

@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     // Clear auth cookies
     const response = new NextResponse(
       `<!DOCTYPE html>
-<html><head><title>ReachOS — Login Success</title></head>
+<html><head><title>TopDiggX — Login Success</title></head>
 <body style="background:#000;color:#e7e9ea;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
 <div style="text-align:center">
   <h1 style="color:#00ba7c">Login Successful!</h1>
