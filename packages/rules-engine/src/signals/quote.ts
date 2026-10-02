@@ -28,8 +28,10 @@ export function predictQuote(ctx: PostContext): SignalScore {
       {
         name: 'invites_commentary',
         weight: 1,
+        // English + Chinese: 怎么 / 怎么看 / 你们怎么看 / 你们说呢 / 你怎么看
         test: (c) =>
-          /\b(thoughts\??|disagree\??|change my mind|fight me|tell me I'?m wrong)\b/i.test(c.text),
+          /\b(thoughts\??|disagree\??|change my mind|fight me|tell me I'?m wrong)\b/i.test(c.text) ||
+          /怎么看|你们怎么看|你们说呢|你怎么看|欢迎反驳|同意吗|同意的请举手|说说你的看法/.test(c.text),
       },
     ],
     suggestionWhenLow:

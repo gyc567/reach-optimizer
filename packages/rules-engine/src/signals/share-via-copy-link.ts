@@ -18,17 +18,20 @@ export function predictShareViaCopyLink(ctx: PostContext): SignalScore {
       {
         name: 'evergreen_reference',
         weight: 1,
+        // English + Chinese: 框架 / 方法论 / 模板 / 指南 / 清单 / 原则 / 套路 / 路线图
         test: (c) =>
           /\b(framework|playbook|template|cheat ?sheet|guide|checklist|principles?)\b/i.test(
             c.text,
-          ),
+          ) ||
+          /框架|方法论|模板|指南|清单|原则|路线图|套路|流程|完整流程|避坑指南|实操指南/.test(c.text),
       },
       {
         name: 'tool_or_resource',
         weight: 1,
         test: (c) =>
           URL_REGEX.test(c.text) ||
-          /\b(I use|I built|free tool|open source|github\.com|figma\.com)\b/i.test(c.text),
+          /\b(I use|I built|free tool|open source|github\.com|figma\.com)\b/i.test(c.text) ||
+          /我用|我做了|开源|免费工具|github\.com|figma\.com|我做了一个|免费资源/.test(c.text),
       },
     ],
     suggestionWhenLow:

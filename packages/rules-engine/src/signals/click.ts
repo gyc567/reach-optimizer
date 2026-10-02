@@ -33,25 +33,30 @@ export function predictClick(ctx: PostContext): SignalScore {
           (afterUrl.trim().length > 0 ||
             /\b(I (wrote|made|built|just shipped)|new post|read here|read more|read why|full thread|case study)\b/i.test(
               beforeUrl,
-            )),
+            ) ||
+            /我(写了|做了|刚发布了|差点搭|差点写了|差一点搭)/.test(beforeUrl)),
       },
       {
         name: 'curiosity_gap',
         weight: 2,
+        // English + Chinese: 真相是 / 原因 / 发生了什么 / 你不会相信 / 为什么 / ...
         test: () =>
           hasUrl &&
           /(\?$|\.\.\.\s*$|→\s*$|here'?s why|the reason|what happened|find out|you won'?t believe)/i.test(
             beforeUrl.trim(),
-          ),
+          ) ||
+          (hasUrl && /(真相是|原因是|发生了什么|你不会相信|为什么|到底是什么|说穿是|为什么说)/.test(beforeUrl.trim())),
       },
       {
         name: 'value_promise',
         weight: 1,
+        // English + Chinese: 免费 / 模板 / 指南 / 方法论 / 拆解 / 深度分析
         test: () =>
           hasUrl &&
           /\b(free|template|guide|playbook|checklist|study|analysis|breakdown|walkthrough|deep dive)\b/i.test(
             beforeUrl,
-          ),
+          ) ||
+          (hasUrl && /(免费|模板|指南|方法论|拆解|深度分析|清单)/.test(beforeUrl)),
       },
     ],
     suggestionWhenLow: hasUrl

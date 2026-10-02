@@ -3,14 +3,12 @@ import { createClaudeClient, analyzeWithClaude, parseClaudeJSON } from './claude
 import { detectSlopHeuristic, type SlopResult } from './slop-detector';
 import { buildSlopAnalysisPrompt } from './prompts/slop-analysis';
 import { buildHookQualityPrompt, type HookQualityResult } from './prompts/hook-quality';
-import { buildHookSuggestionsPrompt } from './prompts/hook-suggestions';
 import type { RuleResult } from '@reach/shared-types';
 
 export interface ServerAnalysisResult {
   slopScore: number;
   slopVerdict: string;
   hookQuality: HookQualityResult | null;
-  hookSuggestions: string[];
   serverRuleResults: RuleResult[];
 }
 
@@ -53,48 +51,12 @@ export class AIAnalyzer {
     return parseClaudeJSON<HookQualityResult>(response);
   }
 
-  async generateHookSuggestions(text: string, lang?: 'tr' | 'en'): Promise<string[]> {
-    const prompt = buildHookSuggestionsPrompt(text, lang);
-
-    // Use fetch directly (SDK has connection issues on Vercel serverless)
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 512,
-          temperature: 0.3,
-          system: prompt.system,
-          messages: [{ role: 'user', content: prompt.user }],
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Anthropic API ${response.status}: ${errText.substring(0, 200)}`);
-      }
-
-      const data = await response.json();
-      const raw = data.content?.[0]?.text ?? '';
-      const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const result = JSON.parse(cleaned) as { suggestions: string[] };
-      return result?.suggestions ?? [];
-    } catch (error) {
-      throw new Error('Claude hook suggestions failed: ' + (error instanceof Error ? error.message : String(error)));
-    }
-  }
-
   async fullAnalysis(text: string): Promise<ServerAnalysisResult> {
-    // Run all checks in parallel
-    const [slopResult, hookQuality, hookSuggestions] = await Promise.all([
+    // Run all checks in parallel (slop + hookQuality — hook suggestions
+    // were removed in v8; the AIOptimizer UI no longer surfaces them).
+    const [slopResult, hookQuality] = await Promise.all([
       this.analyzeSlop(text),
       this.assessHookQuality(text),
-      this.generateHookSuggestions(text),
     ]);
 
     // Convert AI results to RuleResult format for merging
@@ -127,7 +89,6 @@ export class AIAnalyzer {
       slopScore: slopResult.score,
       slopVerdict: slopResult.verdict,
       hookQuality,
-      hookSuggestions,
       serverRuleResults,
     };
   }

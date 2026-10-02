@@ -22,8 +22,12 @@ export function predictRetweet(ctx: PostContext): SignalScore {
       {
         name: 'everyone_should_know',
         weight: 2,
+        // English + Chinese: 所有人都应该知道 / 没人知道 / 被低估了 / 被忽略了 /
+        // 你应该知道 / 真相是 / 很少有人 / 你们都不知道 / 说个冷知识
         test: (c) =>
           /\b(everyone should|nobody talks about|underrated|overlooked|surprising|fact:|did you know|truth is)\b/i.test(
+            c.text,
+          ) || /所有人都应该知道|没人知道|被低估了|被忽略了|你应该知道|真相是|很少有人|你们都不知道|说个冷知识/.test(
             c.text,
           ),
       },

@@ -3,6 +3,8 @@ import { verifyToken } from '@lib/auth';
 import { applyRateLimit } from '@lib/middleware';
 import { prisma } from '@lib/db';
 import { env } from '@lib/env';
+import { callAnthropic, parseModelJson } from '@lib/anthropic';
+import { detectLanguage, getLanguageInstruction, getLanguageName } from '@reach/ai-checks';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -63,37 +65,21 @@ Return ONLY a JSON array with this exact format, no other text:
 [{"text": "tweet text here", "predictedScore": 85, "topic": "topic category"}]`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        temperature: 0.7,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
+    // Detect language from the top tweet(s) so suggestions match user's style
+    const sample = topTweets.length > 0 ? topTweets[0].content : '';
+    const lang = detectLanguage(sample);
+    const langInstruction = getLanguageInstruction(lang);
+    const raw = await callAnthropic({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      temperature: 0.7,
+      system: `You are a Twitter/X viral content strategist.
+
+${langInstruction}`,
+      messages: [{ role: 'user', content: `${userPrompt}\n\nWrite all suggestions in ${getLanguageName(lang)}.` }],
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Anthropic API ${response.status}: ${errText.substring(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const raw = data.content?.[0]?.text ?? '';
-
-    // Parse JSON from response (handle markdown code blocks)
-    let jsonStr = raw.trim();
-    const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1].trim();
-    }
-
-    const suggestions = JSON.parse(jsonStr);
+    const suggestions = parseModelJson<unknown[]>(raw) ?? [];
 
     return NextResponse.json({ success: true, suggestions });
   } catch (error) {

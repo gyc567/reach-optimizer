@@ -14,7 +14,7 @@ export { createClaudeClient, analyzeWithClaude, parseClaudeJSON } from './claude
 export type { HookQualityResult } from './prompts/hook-quality';
 
 // Language detection
-export { detectLanguage, getLanguageInstruction } from './language-detect';
+export { detectLanguage, getLanguageInstruction, getLanguageName } from './language-detect';
 export type { DetectedLanguage } from './language-detect';
 
 // Backward-compatible stubs — use AIAnalyzer for full functionality

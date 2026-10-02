@@ -46,7 +46,11 @@ export interface AuthCallbackResponse {
 
 export interface SuggestRequest {
   content: string;
-  type: 'hook' | 'cta' | 'self-reply';
+  /**
+   * Only `'self-reply'` is supported. `'hook'` / `'cta'` were removed in v8 —
+   * /api/tweets/auto-optimize covers the rewrite use case with full scoring.
+   */
+  type: 'self-reply';
 }
 
 export interface SuggestResponse {

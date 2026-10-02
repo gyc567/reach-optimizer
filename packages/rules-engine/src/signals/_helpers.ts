@@ -82,11 +82,27 @@ export function buildSignalScore(ctx: PostContext, opts: ScoreOpts): SignalScore
 
 // Reusable predicate helpers --------------------------------------------------
 
+// CJK script range — used to detect Chinese/Japanese/Korean characters. We
+// use explicit \u escapes to avoid the silent-widening bug where editors
+// conflate U+F900 (CJK Compatibility Ideograph) with visually-similar U+8C48
+// (CJK Unified Ideograph).
+const CJK_REGEX = /[㐀-䶿一-鿿豈-﫿぀-ゟ゠-ヿㇰ-ㇿ가-힯ᄀ-ᇿꥠ-꥿ힰ-퟿ꀀ-꓏꒐-꓏]/g;
+
 export const URL_REGEX = /https?:\/\/\S+/i;
-export const QUESTION_REGEX = /\?[\s)\]]*$/;
-export const SECOND_PERSON_REGEX = /\b(you|your|you're|yourself)\b/i;
-export const FIRST_PERSON_REGEX = /\bI(?:'m|'ve| )/;
-export const NUMBER_REGEX = /\$[\d,]+|\d+%|\b\d{2,}\b/;
+// Accept both half-width "?" and full-width "？" so Chinese tweets that end in
+// "？" trigger the reply signal. Same idea for closers below.
+export const QUESTION_REGEX = /[?？][\s)\]）]*$/;
+// Second-person: `you / your / you're` (EN) + `你 / 你的 / 你们 / 您` (ZH).
+// Look-behind/look-ahead on Latin alphabet avoids false-positive at CJK/Latin
+// boundaries where \b is meaningless.
+export const SECOND_PERSON_REGEX =
+  /(?<![A-Za-z])(you|your|you're|yourself)(?![A-Za-z])|你|你的|你们|您/;
+// First-person: `I / I'm / I've` (EN) + `我 / 俺 / 咱` (ZH).
+export const FIRST_PERSON_REGEX =
+  /\bI(?:'m|'ve| )\b|我|俺|咱/;
+// Numbers: $1,234 / 23% / 365 / 12,000 — Unicode-aware so "365万亿" and "310%"
+// still fire.
+export const NUMBER_REGEX = /\$[\d,]+|\d+%|\d{2,}/u;
 
 export function startsWithAny(text: string, prefixes: string[]): boolean {
   const lower = text.trimStart().toLowerCase();
@@ -99,45 +115,71 @@ export function containsAny(text: string, needles: string[]): boolean {
 }
 
 export function wordCount(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+  // CJK characters don't have whitespace between words; \s+ would undercount.
+  // Count CJK chars individually + treat non-CJK as one chunk per whitespace
+  // split. Same rationale as CJK_REGEX — explicit \u escapes only.
+  const cjk = (text.match(CJK_REGEX) ?? []).length;
+  const latin = text.replace(CJK_REGEX, ' ').trim().split(/\s+/).filter(Boolean).length;
+  return cjk + latin;
 }
 
 export function hasOpinionMarker(text: string): boolean {
-  return /\b(I think|in my opinion|hot take|unpopular opinion|truth is|the reality is|here'?s the truth|controversial|nobody talks about|change my mind)\b/i.test(
-    text,
-  );
+  // English markers (kept from v3)
+  const en = /\b(I think|in my opinion|hot take|unpopular opinion|truth is|the reality is|here'?s the truth|controversial|nobody talks about|change my mind)\b/i;
+  // Chinese: 我认为 / 我觉得 / 说实话 / 说真的 / 说穿了 / 说白了 / 问题是 / 坦白说 /
+  // 说个冷知识 / 我赌 / 我猜 / 真相是 / 我的观点是
+  const zh = /我认为|我觉得|说实话|说真的|说穿了|说白了|问题是|坦白说|说个冷知识|我赌|我猜|真话是|真相是|我的观点是/;
+  return en.test(text) || zh.test(text);
 }
 
 export function hasControversyMarker(text: string): boolean {
-  return /\b(actually|wrong|overrated|underrated|hate to say|controversial|disagree|but actually)\b/i.test(
-    text,
-  );
+  // English: existing set
+  const en = /\b(actually|wrong|overrated|underrated|hate to say|controversial|disagree|but actually)\b/i;
+  // Chinese: 说穿了 / 你们可能不信 / 反常识 / 但是其实 / 其实不是 / 你错了 / 反直觉 /
+  // 你们都错了 / 都错了 / 别被...骗了 / 说穿了
+  const zh = /说穿了|你们可能不信|反常识|但是其实|其实不是|你错了|反直觉|你们都错了|都错了/;
+  return en.test(text) || zh.test(text);
 }
 
 export function hasAphoristicShape(text: string): boolean {
   const trimmed = text.trim();
   if (trimmed.length > 200) return false;
-  if (trimmed.length < 20) return false;
-  // Short, single-sentence, declarative, no questions
-  const sentences = trimmed.split(/[.!?]\s+/).filter(Boolean);
-  return sentences.length <= 2 && !trimmed.includes('?');
+  if (trimmed.length < 12) return false;
+  // Short, single/dual-sentence, declarative, no questions. Accept both
+  // half-width and full-width closers so a Chinese aphorism like
+  // "X 是 Y。Z。" still counts. Lowered the 20-char threshold to 12 because
+  // CJK text carries more meaning per char.
+  const enSplit = trimmed.split(/[.!?]\s+/).filter(Boolean);
+  const zhSplit = trimmed.split(/[。！？!?]\s*/).filter(Boolean);
+  const sentenceCount = Math.min(enSplit.length || Infinity, zhSplit.length || Infinity);
+  const hasQ = trimmed.includes('?') || trimmed.includes('？');
+  return sentenceCount <= 2 && !hasQ;
 }
 
 export function hasListShape(text: string): boolean {
-  // numbered or bulleted list
-  return /(^|\n)\s*(\d+[.)]\s|[-*•]\s)/.test(text) || /\b(\d+)\s+(ways|reasons|things|tips|lessons|rules|steps|examples)\b/i.test(text);
+  // numbered or bulleted list — accept CJK list markers and English numbers
+  const numberedOrBulleted = /(^|\n)\s*(\d+[.)]\s|[-*•]\s|[(]\s*\d+\s*[)]\s)/.test(text);
+  const enHeadings = /\b(\d+)\s+(ways|reasons|things|tips|lessons|rules|steps|examples)\b/i.test(text);
+  // Chinese: "5 个方法 / 7 条原则 / 3 招" etc.
+  const zhHeadings = /\d+\s*[个条招点](方法|原则|技巧|步骤|原因|理由|建议|经验|规矩)/.test(text);
+  return numberedOrBulleted || enHeadings || zhHeadings;
 }
 
 export function hasInsiderFraming(text: string): boolean {
-  return /\b(the trick|the secret|nobody tells you|what (they|nobody) won'?t tell you|hidden|insider|behind the scenes|the real reason|truth (about|behind))\b/i.test(
-    text,
-  );
+  // English: existing set
+  const en = /\b(the trick|the secret|nobody tells you|what (they|nobody) won'?t tell you|hidden|insider|behind the scenes|the real reason|truth (about|behind))\b/i;
+  // Chinese: 内幕 / 真相 / 真实原因 / 冷知识 / 你们不知道 / 说个秘密 / 隐藏的 /
+  // 说个冷门 / 很少有人 / 揭秘 / 说个不为人知
+  const zh = /内幕|真相|真实原因|冷知识|你们不知道|说个秘密|隐藏的|说个冷门|很少有人|揭秘|说个不为人知/;
+  return en.test(text) || zh.test(text);
 }
 
 export function hasNicheTargeting(text: string): boolean {
-  return /\b(every (designer|engineer|founder|PM|marketer|writer|dev|developer|manager|CEO|CTO|CMO|recruiter|teacher|parent|student) should|if you'?re a)\b/i.test(
-    text,
-  );
+  // English: existing set
+  const en = /\b(every (designer|engineer|founder|PM|marketer|writer|dev|developer|manager|CEO|CTO|CMO|recruiter|teacher|parent|student) should|if you'?re a)\b/i;
+  // Chinese: 每个[职业]都应该 / 做 [职业] 的 / 设计师 / 工程师 / 投资人 / 创业者 / 产品经理
+  const zh = /每个(设计师|工程师|创始人|产品经理|运营|投资人|创业者|开发者|管理者|老师|家长|学生)都应该|设计师|工程师|投资人|创业者|产品经理/;
+  return en.test(text) || zh.test(text);
 }
 
 export function hasParagraphBreaks(text: string): boolean {
@@ -146,6 +188,8 @@ export function hasParagraphBreaks(text: string): boolean {
 
 export function isWallOfText(text: string): boolean {
   const trimmed = text.trim();
+  // 300-char threshold tuned for English. Chinese tweets rarely hit 300 chars,
+  // so this is unlikely to false-positive on Chinese.
   return trimmed.length > 300 && !hasParagraphBreaks(trimmed);
 }
 

@@ -37,3 +37,6 @@ Thumbs.db
 *.tmp
 .vercel
 .vercel-build
+
+# OMC runtime state (operational artifacts, not source)
+.omc/

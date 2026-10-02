@@ -18,8 +18,11 @@ export function predictFavorite(ctx: PostContext): SignalScore {
       {
         name: 'identifiable_emotion',
         weight: 2,
+        // English emotions + Chinese emotion words (崩溃/气死/真服了/笑死/哭死/炸了/疯了/惊呆了/笑出声/真的气)
         test: (c) =>
           /\b(love|hate|excited|frustrated|angry|grateful|proud|scared|relieved|amazed)\b/i.test(
+            c.text,
+          ) || /崩溃|气死|真服了|笑死|哭死|炸了|疯了|惊呆了|笑出声|真的气|太惨了|笑死我了|酸了|扎心了/.test(
             c.text,
           ),
       },

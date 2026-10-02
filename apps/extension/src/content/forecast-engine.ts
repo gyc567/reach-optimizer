@@ -1,8 +1,11 @@
-import type { AnalysisResult, AccountHealth, ReachForecast, WhatIfScenario } from '@reach/shared-types';
+// Re-export the forecast engine from the shared rules-engine package so the
+// extension and web app stay in sync. The original implementation lived
+// here; it was moved to packages/rules-engine/src/forecast.ts.
 
-// ---------------------------------------------------------------------------
-// Reach Forecast Engine — client-side prediction model
-// ---------------------------------------------------------------------------
+export { computeForecast, formatNumber, FORECAST_CONSTANTS } from '@reach/rules-engine';
+export type { ForecastInput } from '@reach/rules-engine';
+
+import type { AnalysisResult, AccountHealth, ReachForecast, WhatIfScenario } from '@reach/shared-types';
 
 interface ForecastInput {
   analysis: AnalysisResult;
@@ -28,6 +31,16 @@ const OFF_PEAK_MULTIPLIER = 0.85;    // Off-peak posting
 // Fallback: if no tracked data, estimate views from follower count
 const FOLLOWER_IMPRESSION_RATE = 0.05; // ~5% of followers see an average tweet
 const MIN_ESTIMATED_VIEWS = 50;        // Floor for very small accounts
+
+/**
+ * Safe percent change — guards against divide-by-zero when the baseline
+ * prediction is 0 (very low score or no media). Returns 0% in that case so
+ * the UI shows no NaN.
+ */
+function safeDeltaPercent(next: number, baseline: number): number {
+  if (!Number.isFinite(baseline) || baseline <= 0) return 0;
+  return Math.round(((next - baseline) / baseline) * 100);
+}
 
 /**
  * Compute a reach forecast from the current analysis state and account data.
@@ -178,7 +191,7 @@ function buildScenarios(
         icon: '\uD83D\uDD17',
         predictedReach: withGap,
         delta: withGap - currentPrediction,
-        deltaPercent: Math.round(((withGap - currentPrediction) / currentPrediction) * 100),
+        deltaPercent: safeDeltaPercent(withGap, currentPrediction),
         actionable: true,
         alreadyApplied: false,
       });
@@ -207,7 +220,7 @@ function buildScenarios(
       icon: '\uD83D\uDDBC\uFE0F',
       predictedReach: withImage,
       delta: withImage - currentPrediction,
-      deltaPercent: Math.round(((withImage - currentPrediction) / currentPrediction) * 100),
+      deltaPercent: safeDeltaPercent(withImage, currentPrediction),
       actionable: false,
       alreadyApplied: false,
     });
@@ -221,7 +234,7 @@ function buildScenarios(
       icon: '\uD83C\uDFA5',
       predictedReach: withVideo,
       delta: withVideo - currentPrediction,
-      deltaPercent: Math.round(((withVideo - currentPrediction) / currentPrediction) * 100),
+      deltaPercent: safeDeltaPercent(withVideo, currentPrediction),
       actionable: false,
       alreadyApplied: false,
     });
@@ -249,7 +262,7 @@ function buildScenarios(
       icon: '\u23F0',
       predictedReach: atPeakTime,
       delta: atPeakTime - currentPrediction,
-      deltaPercent: Math.round(((atPeakTime - currentPrediction) / currentPrediction) * 100),
+      deltaPercent: safeDeltaPercent(atPeakTime, currentPrediction),
       actionable: false,
       alreadyApplied: false,
     });
@@ -277,7 +290,7 @@ function buildScenarios(
       icon: '\uD83D\uDD25',
       predictedReach: withTrending,
       delta: withTrending - currentPrediction,
-      deltaPercent: Math.round(((withTrending - currentPrediction) / currentPrediction) * 100),
+      deltaPercent: safeDeltaPercent(withTrending, currentPrediction),
       actionable: false,
       alreadyApplied: false,
     });
@@ -308,7 +321,7 @@ function buildScenarios(
       icon: '\uD83D\uDE80',
       predictedReach: bestCase,
       delta: bestCase - currentPrediction,
-      deltaPercent: Math.round(((bestCase - currentPrediction) / currentPrediction) * 100),
+      deltaPercent: safeDeltaPercent(bestCase, currentPrediction),
       actionable: false,
       alreadyApplied: false,
     });

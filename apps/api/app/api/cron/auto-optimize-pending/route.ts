@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@lib/env';
 import { verifyCronAuth } from '@lib/cron-auth';
 import { ScoreEngine } from '@reach/rules-engine';
+import { callAnthropic, parseModelJson } from '@lib/anthropic';
+import { detectLanguage, getLanguageInstruction, getLanguageName } from '@reach/ai-checks';
 import pg from 'pg';
 
 export const runtime = 'nodejs';
@@ -43,7 +45,7 @@ export async function GET(request: NextRequest) {
       // 3. If score < 70, run optimization (up to 3 rounds)
       if (original.score < 70 && env.ANTHROPIC_API_KEY) {
         for (let round = 1; round <= 3; round++) {
-          const variations = await generateVariations(env.ANTHROPIC_API_KEY, bestText, round);
+          const variations = await generateVariations(bestText, round);
 
           for (const v of variations) {
             const scored = engine.evaluate({
@@ -122,23 +124,18 @@ export async function GET(request: NextRequest) {
 }
 
 async function generateVariations(
-  apiKey: string,
   seedText: string,
   round: number,
 ): Promise<string[]> {
+  const lang = detectLanguage(seedText);
+  const langInstruction = getLanguageInstruction(lang);
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        temperature: 0.8 + round * 0.05,
-        system: `You are an elite X/Twitter ghostwriter. You rewrite tweets to maximize reach.
+    const text = await callAnthropic({
+      max_tokens: 1024,
+      temperature: 0.8 + round * 0.05,
+      system: `You are an elite X/Twitter ghostwriter. You rewrite tweets to maximize reach.
+
+${langInstruction}
 
 WINNING PROFILE (from 200-experiment autoresearch optimization):
 - Tone: provocative and bold (0.77), NOT casual
@@ -150,16 +147,17 @@ WINNING PROFILE (from 200-experiment autoresearch optimization):
 - Style: NO emoji, NO hashtags, sound human not AI
 
 Keep EXACT same facts. Return ONLY valid JSON.`,
-        messages: [
-          {
-            role: 'user',
-            content: `Round ${round}. Rewrite this tweet 3 ways using the winning profile. RULES:
+      messages: [
+        {
+          role: 'user',
+          content: `Round ${round}. Rewrite this tweet 3 ways using the winning profile. RULES:
 1. Keep EXACT same facts — do NOT invent information
-2. Each must be COMPLETE tweet, 2 sentences max, under 280 chars
-3. Make it provocative and bold — take a clear stance
-4. Use specific numbers/data from the original
-5. End ~half with a sharp question, ~half with a bold statement
-6. First-person perspective when natural ("I", "my", "we")
+2. Write in ${getLanguageName(lang)} — DO NOT translate
+3. Each must be COMPLETE tweet, 2 sentences max, under 280 chars
+4. Make it provocative and bold — take a clear stance
+5. Use specific numbers/data from the original
+6. End ~half with a sharp question, ~half with a bold statement
+7. First-person perspective when natural ("I", "my", "we")
 7. NO emoji, NO hashtags, NO AI words (delve, landscape, leverage)
 
 V1: Bold provocative claim + sharp question
@@ -169,20 +167,11 @@ V3: Contrarian take + strong statement ending
 Tweet: "${seedText.replace(/"/g, '\\"')}"
 
 Return JSON: {"suggestions": ["v1", "v2", "v3"]}`,
-          },
-        ],
-      }),
+        },
+      ],
     });
-
-    if (!response.ok) return [];
-    const data = await response.json();
-    const raw = data.content?.[0]?.text ?? '{}';
-    const cleaned = raw
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim();
-    const result = JSON.parse(cleaned);
-    return (result.suggestions || []).filter(
+    const result = parseModelJson<{ suggestions?: string[] }>(text) ?? {};
+    return (result.suggestions ?? []).filter(
       (s: string) => s && s.length > 10 && s.length <= 280,
     );
   } catch {

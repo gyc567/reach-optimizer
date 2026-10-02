@@ -27,10 +27,12 @@ export function predictShareViaDm(ctx: PostContext): SignalScore {
       {
         name: 'send_to_friend_pattern',
         weight: 2,
-        test: (c) =>
+        // English + Chinese: 转发给你朋友 / 转发给你的 / 转发给你的老板 / 转发给你的老板 / ...
+    test: (c) =>
           /\b(send this to|tag (your|a) (friend|boss|teammate|founder|designer)|forward this|share this with)\b/i.test(
             c.text,
-          ),
+          ) ||
+          /转发给(你的|你的朋友|你的同事|你的老板|你的老板|你的队友|你的合伙人)/.test(c.text),
       },
     ],
     suggestionWhenLow:

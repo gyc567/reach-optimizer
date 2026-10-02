@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
@@ -9,6 +10,9 @@
     "paths": {
       "@/*": [
         "./app/*"
+      ],
+      "@components/*": [
+        "./components/*"
       ],
       "@lib/*": [
         "./lib/*"
@@ -30,6 +34,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "types/**/*.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [

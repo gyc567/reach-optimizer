@@ -7,9 +7,31 @@ import {
 
 export const PROFILE_CLICK_MAX = 7;
 
-const SPECIFIC_ACHIEVEMENT = /\bI\s+(?:built|launched|shipped|founded|sold|raised|grew|scaled|wrote|coded|hired)\b/i;
-const CREDENTIAL = /\b(ex[- ]|former)\s*\w+|\b\d+\+?\s*(years?|months?)\s+(in|at|of)\s+\w+|\b(CEO|CTO|CMO|founder|head of)\b\s+(at|of)\s+\w+/i;
-const PERSPECTIVE = /\b(I'?ve (?:seen|learned|noticed|tried)|in my (\d+\s+)?(years?|months?)|after (?:building|running|launching)|every time I)\b/i;
+// Achievement verbs (EN) + Chinese. Use new RegExp() to combine the EN and
+// ZH branches into a single regex literal — JS `|` between two literals is
+// bitwise-OR, not regex alternation.
+const SPECIFIC_ACHIEVEMENT = new RegExp(
+  '\\bI\\s+(?:built|launched|shipped|founded|sold|raised|grew|scaled|wrote|coded|hired)\\b' +
+    '|' +
+    '我(?:创建|推出|发布|创立|卖出|筹款|扩张|扩展|写|搭|从零开始做)',
+  'i',
+);
+const CREDENTIAL = new RegExp(
+  '\\b(ex[- ]|former)\\s*\\w+|' +
+    '\\b\\d+\\+?\\s*(years?|months?)\\s+(in|at|of)\\s+\\w+|' +
+    '\\b(CEO|CTO|CMO|founder|head of)\\b\\s+(at|of)\\s+\\w+' +
+    '|' +
+    '前(谷歌|微软|苹果|亚马逊|脸书|阿里巴巴|腾讯|字节跳动|美团|京东|华为|小米|百度)' +
+    '|' +
+    '\\d+\\+?\\s*(?:年|个月).+(?:经验|经历)',
+  'i',
+);
+const PERSPECTIVE = new RegExp(
+  "\\b(I'?ve (?:seen|learned|noticed|tried)|in my (\\d+\\s+)?(years?|months?)|after (?:building|running|launching)|every time I)\\b" +
+    '|' +
+    '我(做了|见过|尝试过|学习)|在我的.{0,20}(经验|经历)',
+  'i',
+);
 
 export function predictProfileClick(ctx: PostContext): SignalScore {
   return buildSignalScore(ctx, {
