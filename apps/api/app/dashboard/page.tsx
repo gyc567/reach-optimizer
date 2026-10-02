@@ -4,7 +4,7 @@ import { verifyToken } from '@lib/auth';
 import { CopyButton } from './CopyButton';
 
 export const metadata = {
-  title: 'ReachOS Dashboard',
+  title: 'TopDiggX Dashboard',
   description: 'Tweet analytics and optimization dashboard',
 };
 
@@ -106,7 +106,7 @@ export default async function DashboardPage() {
           <div style={styles.headerInner}>
             <div style={styles.logoRow}>
               <span style={styles.logoDot} />
-              <h1 style={styles.logoText}>ReachOS Dashboard</h1>
+              <h1 style={styles.logoText}>TopDiggX Dashboard</h1>
             </div>
             <span style={styles.betaBadge}>BETA</span>
           </div>
@@ -124,7 +124,7 @@ export default async function DashboardPage() {
               fontWeight: 700,
               margin: '0 0 12px 0',
             }}>
-              ReachOS Dashboard
+              TopDiggX Dashboard
             </h2>
             <p style={{
               color: colors.textSecondary,
@@ -154,7 +154,7 @@ export default async function DashboardPage() {
         </main>
         <footer style={styles.footer}>
           <span style={{ color: colors.textSecondary, fontSize: 13 }}>
-            ReachOS - Open-source Reach Optimizer
+            TopDiggX - Open-source Reach Optimizer
           </span>
         </footer>
       </div>
@@ -217,7 +217,7 @@ export default async function DashboardPage() {
         <div style={styles.headerInner}>
           <div style={styles.logoRow}>
             <span style={styles.logoDot} />
-            <h1 style={styles.logoText}>ReachOS Dashboard</h1>
+            <h1 style={styles.logoText}>TopDiggX Dashboard</h1>
           </div>
           <span style={styles.betaBadge}>BETA</span>
         </div>
@@ -263,7 +263,7 @@ export default async function DashboardPage() {
           ) : totalTweets === 0 ? (
             <div style={styles.emptyState}>
               <p style={{ color: colors.textSecondary, margin: 0 }}>
-                No tracked tweets yet. Use the ReachOS extension to start
+                No tracked tweets yet. Use the TopDiggX extension to start
                 tracking your posts.
               </p>
             </div>
@@ -354,7 +354,7 @@ export default async function DashboardPage() {
       {/* Footer */}
       <footer style={styles.footer}>
         <span style={{ color: colors.textSecondary, fontSize: 13 }}>
-          ReachOS - Tweet Reach Optimization Platform
+          TopDiggX - Tweet Reach Optimization Platform
         </span>
       </footer>
     </div>
