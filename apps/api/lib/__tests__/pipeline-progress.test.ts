@@ -1,4 +1,25 @@
 import { describe, it, expect } from 'vitest';
+
+import { readFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Resolve repo root by walking up from this test file until we find
+// pnpm-workspace.yaml. Works regardless of which directory vitest was
+// invoked from, in both local dev and CI. (Tests previously hardcoded
+// `/Users/jie/...` paths which only worked on the author's machine.)
+function findRepoRoot(): string {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  while (dir !== '/') {
+    if (existsSync(resolve(dir, 'pnpm-workspace.yaml'))) return dir;
+    dir = resolve(dir, '..');
+  }
+  throw new Error('pnpm-workspace.yaml not found above this test file');
+}
+const REPO = findRepoRoot();
+const readApi = (rel: string) => readFileSync(resolve(REPO, 'apps/api', rel), 'utf8');
+const readPkg = (pkg: string, rel: string) => readFileSync(resolve(REPO, 'packages', pkg, rel), 'utf8');
+
 import {
   reducer,
   PIPELINE_INITIAL_STATE,
@@ -288,11 +309,7 @@ describe('reducer — v9 state machine', () => {
 
 describe('v9 invariants — UI source contracts', () => {
   it('AIOptimizer.tsx no longer has its own top-level Abort button (pipeline-abort)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/AIOptimizer.tsx',
-      'utf8',
-    );
+    const text = readApi("components/AIOptimizer.tsx");
     // The old testid "pipeline-abort" should be gone from StagesRow.
     // (PipelineProgress uses "progress-abort" instead.)
     const stagesRowMatch = text.match(/function StagesRow[\s\S]*?\n\}/);
@@ -301,11 +318,7 @@ describe('v9 invariants — UI source contracts', () => {
   });
 
   it('AIOptimizer.tsx does NOT mount PipelineProgress (v10 moved it to floating CatProgressFab)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/AIOptimizer.tsx',
-      'utf8',
-    );
+    const text = readApi("components/AIOptimizer.tsx");
     // v10 — PipelineProgress is no longer mounted inline. It's kept in the
     // codebase as an unused component but no longer wired up. The page-level
     // CatProgressFab handles progress display now.
@@ -313,30 +326,18 @@ describe('v9 invariants — UI source contracts', () => {
   });
 
   it('app/page.tsx mounts CatProgressFab (v10 floating FAB takes over)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/app/page.tsx',
-      'utf8',
-    );
+    const text = readApi("app/page.tsx");
     expect(text).toMatch(/import\s*\{\s*CatProgressFab\s*\}/);
     expect(text).toMatch(/<CatProgressFab[\s\S]*?\/>/);
   });
 
   it('PipelineProgress.tsx renders only when status === running', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/PipelineProgress.tsx',
-      'utf8',
-    );
+    const text = readApi("components/PipelineProgress.tsx");
     expect(text).toMatch(/if \(state\.status !== 'running'\) return null/);
   });
 
   it('PipelineProgress.tsx has ARIA progressbar role + aria-valuenow', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/PipelineProgress.tsx',
-      'utf8',
-    );
+    const text = readApi("components/PipelineProgress.tsx");
     expect(text).toMatch(/role="progressbar"/);
     expect(text).toMatch(/aria-valuemin=\{0\}/);
     expect(text).toMatch(/aria-valuemax=\{100\}/);
@@ -344,20 +345,12 @@ describe('v9 invariants — UI source contracts', () => {
   });
 
   it('PipelineProgress.tsx has aria-live region for status', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/PipelineProgress.tsx',
-      'utf8',
-    );
+    const text = readApi("components/PipelineProgress.tsx");
     expect(text).toMatch(/aria-live="polite"/);
   });
 
   it('i18n en.json has v9 progress keys', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/messages/en.json',
-      'utf8',
-    );
+    const text = readApi("messages/en.json");
     expect(text).toMatch(/"progress\.label"/);
     expect(text).toMatch(/"progress\.analyzing"/);
     expect(text).toMatch(/"progress\.optimizing_first"/);
@@ -367,11 +360,7 @@ describe('v9 invariants — UI source contracts', () => {
   });
 
   it('i18n zh.json has v9 progress keys', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/messages/zh.json',
-      'utf8',
-    );
+    const text = readApi("messages/zh.json");
     expect(text).toMatch(/"progress\.label"/);
     expect(text).toMatch(/"progress\.analyzing"/);
     expect(text).toMatch(/"progress\.round"/);
