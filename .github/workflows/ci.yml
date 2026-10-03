@@ -72,6 +72,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Generate Prisma client (required by `pnpm typecheck` — apps/api imports
+      # `@prisma/client` and prisma's generated types).
+      - name: Prisma generate
+        run: cd apps/api && npx prisma generate
+
       - name: Typecheck
         run: pnpm typecheck
 
