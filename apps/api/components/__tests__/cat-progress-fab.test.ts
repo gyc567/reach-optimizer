@@ -1,4 +1,24 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Resolve repo root by walking up from this test file until we find
+// pnpm-workspace.yaml. Works regardless of which directory vitest was
+// invoked from, in both local dev and CI. (Tests previously hardcoded
+// `/Users/jie/...` paths which only worked on the author's machine.)
+function findRepoRoot(): string {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  while (dir !== '/') {
+    if (existsSync(resolve(dir, 'pnpm-workspace.yaml'))) return dir;
+    dir = resolve(dir, '..');
+  }
+  throw new Error('pnpm-workspace.yaml not found above this test file');
+}
+const REPO = findRepoRoot();
+const FAB_SOURCE = resolve(REPO, 'apps/api/components/CatProgressFab.tsx');
+const readFab = () => readFileSync(FAB_SOURCE, 'utf8');
+
 import {
   deriveMood,
   getRingColor,
@@ -88,11 +108,7 @@ describe('getRingColor — color mapping', () => {
 
 describe('CatProgressFab source contracts', () => {
   it('exports CatProgressFab component with proper testid', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/data-testid="cat-progress-fab"/);
     expect(text).toMatch(/data-testid="cat-progress-circle"/);
     expect(text).toMatch(/data-testid="cat-progress-ring"/);
@@ -104,11 +120,7 @@ describe('CatProgressFab source contracts', () => {
   });
 
   it('uses SVG paths for mouth/face — NOT emojis', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     // No emoji in source (cross-platform consistency)
     expect(text).not.toMatch(/💤|🦋|😺|😾/);
     // But SVG path elements exist
@@ -116,21 +128,13 @@ describe('CatProgressFab source contracts', () => {
   });
 
   it('uses role="group" for FAB (NOT role="status" — to avoid a11y interruption)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/role="group"/);
     expect(text).not.toMatch(/role="status"/);
   });
 
   it('puts role="progressbar" inside tooltip, not on FAB', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/role="progressbar"/);
     expect(text).toMatch(/aria-valuemin=\{0\}/);
     expect(text).toMatch(/aria-valuemax=\{100\}/);
@@ -138,68 +142,40 @@ describe('CatProgressFab source contracts', () => {
   });
 
   it('has aria-live="polite" on tooltip for screen reader announcements', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/aria-live="polite"/);
   });
 
   it('uses position: fixed with safe-area-inset', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/position:\s*['"]fixed['"]/);
     expect(text).toMatch(/safe-area-inset-bottom/);
   });
 
   it('uses z-index 100 (not 1000 — leaves room for modal)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/zIndex:\s*100/);
     expect(text).not.toMatch(/zIndex:\s*1000/);
   });
 
   it('unmounts when status !== running (defensive)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/if \(state\.status !== 'running'\) return null/);
   });
 
   it('unmounts when mood is done', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/if \(mood === 'done'\) return null/);
   });
 
   it('uses SVG ring with stroke-dasharray for progress', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/strokeDasharray=/);
     expect(text).toMatch(/strokeDashoffset=/);
   });
 
   it('has 4 distinct cat face moods (analyzing/optimizing/error/done)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/mood === 'analyzing'/);
     expect(text).toMatch(/mood === 'optimizing'/);
     expect(text).toMatch(/mood === 'error'/);
@@ -207,11 +183,7 @@ describe('CatProgressFab source contracts', () => {
   });
 
   it('uses bottom-right positioning (24px from edges)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/CatProgressFab.tsx',
-      'utf8',
-    );
+    const text = readFab();
     expect(text).toMatch(/right:\s*24/);
     expect(text).toMatch(/bottom:/);
   });

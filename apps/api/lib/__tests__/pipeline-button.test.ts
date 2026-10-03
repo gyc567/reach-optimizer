@@ -1,4 +1,25 @@
 import { describe, it, expect } from 'vitest';
+
+import { readFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Resolve repo root by walking up from this test file until we find
+// pnpm-workspace.yaml. Works regardless of which directory vitest was
+// invoked from, in both local dev and CI. (Tests previously hardcoded
+// `/Users/jie/...` paths which only worked on the author's machine.)
+function findRepoRoot(): string {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  while (dir !== '/') {
+    if (existsSync(resolve(dir, 'pnpm-workspace.yaml'))) return dir;
+    dir = resolve(dir, '..');
+  }
+  throw new Error('pnpm-workspace.yaml not found above this test file');
+}
+const REPO = findRepoRoot();
+const readApi = (rel: string) => readFileSync(resolve(REPO, 'apps/api', rel), 'utf8');
+const readPkg = (pkg: string, rel: string) => readFileSync(resolve(REPO, 'packages', pkg, rel), 'utf8');
+
 import { deriveButtonState, getRunningRound } from '@lib/pipeline-button';
 import { PIPELINE_INITIAL_STATE } from '@lib/useOptimizationPipeline';
 import type { PipelineState } from '@lib/useOptimizationPipeline';
@@ -165,89 +186,53 @@ describe('getRunningRound — round counter for button label', () => {
 
 describe('v11 source contracts — bug fix verification', () => {
   it('app/page.tsx does NOT check appliedText === null (dead branch removed)', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/app/page.tsx',
-      'utf8',
-    );
+    const text = readApi("app/page.tsx");
     expect(text).not.toMatch(/appliedText\s*===\s*null/);
   });
 
   it('app/page.tsx uses deriveButtonState from pipeline-button module', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/app/page.tsx',
-      'utf8',
-    );
+    const text = readApi("app/page.tsx");
     expect(text).toMatch(/import\s*\{[^}]*deriveButtonState[^}]*\}\s*from\s*['"]@lib\/pipeline-button['"]/);
     expect(text).toMatch(/deriveButtonState\(pipeline\.state\)/);
   });
 
   it('app/page.tsx uses getRunningRound for running counter', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/app/page.tsx',
-      'utf8',
-    );
+    const text = readApi("app/page.tsx");
     expect(text).toMatch(/getRunningRound\(pipeline\.state\)/);
   });
 
   it('TweetComposer no longer uses aiPending prop name', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/TweetComposer.tsx',
-      'utf8',
-    );
+    const text = readApi("components/TweetComposer.tsx");
     // Allow the comment that mentions it historically, but no prop destructuring
     expect(text).not.toMatch(/aiPending\??:\s*boolean/);
     expect(text).not.toMatch(/^\s*aiPending,?\s*$/m);
   });
 
   it('TweetComposer exposes aiButtonState prop', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/TweetComposer.tsx',
-      'utf8',
-    );
+    const text = readApi("components/TweetComposer.tsx");
     expect(text).toMatch(/aiButtonState\??:\s*AIButtonState/);
     expect(text).toMatch(/runningRound\??:\s*\{/);
   });
 
   it('TweetComposer renders data-button-state attribute on the AI button', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/TweetComposer.tsx',
-      'utf8',
-    );
+    const text = readApi("components/TweetComposer.tsx");
     expect(text).toMatch(/data-button-state=\{aiButtonState\}/);
   });
 
   it('TweetComposer sets aria-disabled alongside disabled', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/components/TweetComposer.tsx',
-      'utf8',
-    );
+    const text = readApi("components/TweetComposer.tsx");
     expect(text).toMatch(/aria-disabled=\{isDisabled\}/);
   });
 
   it('i18n en.json has v11 new keys', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/messages/en.json',
-      'utf8',
-    );
+    const text = readApi("messages/en.json");
     expect(text).toMatch(/"common\.thinking_with_progress"/);
     expect(text).toMatch(/"common\.rerun_short"/);
     expect(text).toMatch(/"common\.retry_short"/);
   });
 
   it('i18n zh.json has v11 new keys', async () => {
-    const fs = await import('fs');
-    const text = fs.readFileSync(
-      '/Users/jie/code/reach-optimizer/apps/api/messages/zh.json',
-      'utf8',
-    );
+    const text = readApi("messages/zh.json");
     expect(text).toMatch(/"common\.thinking_with_progress"/);
     expect(text).toMatch(/"common\.rerun_short"/);
     expect(text).toMatch(/"common\.retry_short"/);
