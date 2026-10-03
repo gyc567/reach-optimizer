@@ -146,16 +146,69 @@ describe('CatProgressFab source contracts', () => {
     expect(text).toMatch(/aria-live="polite"/);
   });
 
-  it('uses position: fixed with safe-area-inset', async () => {
+  it('uses position: fixed (modal layer)', async () => {
     const text = readFab();
     expect(text).toMatch(/position:\s*['"]fixed['"]/);
-    expect(text).toMatch(/safe-area-inset-bottom/);
   });
 
-  it('uses z-index 100 (not 1000 — leaves room for modal)', async () => {
+  it('centers with top: 50% / left: 50% / translate(-50%, -50%)', async () => {
     const text = readFab();
-    expect(text).toMatch(/zIndex:\s*100/);
-    expect(text).not.toMatch(/zIndex:\s*1000/);
+    expect(text).toMatch(/top:\s*['"]50%['"]/);
+    expect(text).toMatch(/left:\s*['"]50%['"]/);
+    expect(text).toMatch(/translate\(-50%, -50%\)/);
+  });
+
+  it('uses z-index 1000 (modal layer, above backdrop at 999)', async () => {
+    const text = readFab();
+    // Accept either literal or named constant — both forms are valid.
+    expect(text).toMatch(/zIndex:\s*(?:1000|FAB_Z)/);
+    expect(text).toMatch(/BACKDROP_Z\s*=\s*999|FAB_Z\s*=\s*1000/);
+    expect(text).toMatch(/zIndex:\s*(?:999|BACKDROP_Z)/);
+  });
+
+  it('renders backdrop element with click-to-abort', async () => {
+    const text = readFab();
+    expect(text).toMatch(/data-testid="cat-progress-backdrop"/);
+    expect(text).toMatch(/rgba\(0, 0, 0, 0\.5\)/);
+    expect(text).toMatch(/onClick=\{onAbort\}/);
+  });
+
+  it('updates FAB_SIZE constant to 96', async () => {
+    const text = readFab();
+    expect(text).toMatch(/FAB_SIZE\s*=\s*96/);
+  });
+
+  it('auto-focuses FAB on mount via requestAnimationFrame', async () => {
+    const text = readFab();
+    expect(text).toMatch(/fabRef/);
+    expect(text).toMatch(/requestAnimationFrame/);
+    expect(text).toMatch(/fabRef\.current\?\.focus\(\)/);
+  });
+
+  it('restores focus on unmount to previously-focused element', async () => {
+    const text = readFab();
+    expect(text).toMatch(/previousFocusRef/);
+    expect(text).toMatch(/document\.activeElement/);
+  });
+
+  it('handles Escape key to abort', async () => {
+    const text = readFab();
+    expect(text).toMatch(/['"]Escape['"]/);
+    expect(text).toMatch(/onAbort\(\)/);
+  });
+
+  it('traps focus inside FAB + abort button via Tab key', async () => {
+    const text = readFab();
+    expect(text).toMatch(/abortButtonRef/);
+    expect(text).toMatch(/['"]Tab['"]/);
+    expect(text).toMatch(/window\.addEventListener\(['"]keydown['"]/);
+  });
+
+  it('uses entrance animation (catFadeIn + catBackdropFade)', async () => {
+    const text = readFab();
+    expect(text).toMatch(/@keyframes catFadeIn/);
+    expect(text).toMatch(/@keyframes catBackdropFade/);
+    expect(text).toMatch(/scale\(0\.85/);
   });
 
   it('unmounts when status !== running (defensive)', async () => {
@@ -180,11 +233,5 @@ describe('CatProgressFab source contracts', () => {
     expect(text).toMatch(/mood === 'optimizing'/);
     expect(text).toMatch(/mood === 'error'/);
     expect(text).toMatch(/mood === 'done'/);
-  });
-
-  it('uses bottom-right positioning (24px from edges)', async () => {
-    const text = readFab();
-    expect(text).toMatch(/right:\s*24/);
-    expect(text).toMatch(/bottom:/);
   });
 });
