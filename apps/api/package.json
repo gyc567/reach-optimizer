@@ -8,6 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"
   },

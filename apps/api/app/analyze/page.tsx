@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { colors, fonts } from '@lib/styles';
 
 export const metadata = {
@@ -89,7 +90,7 @@ export default function AnalyzePage() {
           }}
         >
           This page is currently being built. For now, try the{' '}
-          <a
+          <Link
             href="/"
             style={{
               color: colors.accent.blue,
@@ -98,9 +99,9 @@ export default function AnalyzePage() {
             }}
           >
             Web Scorer
-          </a>{' '}
+          </Link>{' '}
           or{' '}
-          <a
+          <Link
             href="/dashboard"
             style={{
               color: colors.accent.blue,
@@ -109,7 +110,7 @@ export default function AnalyzePage() {
             }}
           >
             Dashboard
-          </a>
+          </Link>
           .
         </p>
 

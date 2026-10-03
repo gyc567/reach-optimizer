@@ -40,3 +40,9 @@ Thumbs.db
 
 # OMC runtime state (operational artifacts, not source)
 .omc/
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
