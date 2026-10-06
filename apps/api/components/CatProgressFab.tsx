@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { colors, fonts, radius, shadows } from '@lib/styles';
 import { useT } from '@lib/i18n-client';
 import type {
@@ -37,23 +37,39 @@ export function getRingColor(mood: CatMood): string {
   }
 }
 
-const FAB_SIZE = 72;
-const RING_RADIUS = 32;
-const RING_STROKE = 3;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ≈ 201.06
+const FAB_SIZE = 96;
+const RING_RADIUS = 42;
+const RING_STROKE = 4;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ≈ 263.89
+
+// z-index layers: backdrop sits below the FAB. FAB sits above all page UI
+// (page sticky headers use 10; old floating-UI layer was 100, now bumped
+// to modal-layer 1000 since this is the primary focal point during AI
+// Optimize).
+const BACKDROP_Z = 999;
+const FAB_Z = 1000;
 
 /**
- * v10 — Floating cat FAB. Sits in viewport's bottom-right corner and
- * gives the user a clear, system-level progress signal during AI Optimize.
+ * v14 — Centered modal-style cat FAB. Sits in the visual center of the
+ * viewport with a dimmed backdrop and auto-focuses on mount, so the user
+ * is immediately aware that AI Optimize is running and can abort with
+ * Esc, the Abort button, or by clicking the backdrop.
  *
  * Visual:
- *   - 72×72 circular FAB
+ *   - 96×96 circular FAB, centered on viewport
  *   - SVG progress ring around the edge (stroke-dasharray)
  *   - Cat face (pure-color blocks + SVG paths) in the center
  *   - Round label below the FAB ("Round 2/5")
  *   - Tooltip on hover/focus/click with status + ETA + Abort button
+ *   - Dimmed backdrop (rgba 0,0,0,0.5) covering the page
+ *   - 200ms fade + scale-up entrance animation
  *
  * Behavior:
+ *   - On mount: capture document.activeElement, focus the FAB circle
+ *   - On unmount: restore focus to the previously-focused element
+ *   - Esc key: call onAbort() (modal-style cancel)
+ *   - Tab key: trap focus between FAB circle and Abort button
+ *   - Click on backdrop: call onAbort()
  *   - Analyzes stage: ring is empty + breathe animation, cat is sleeping
  *   - Optimizing stage: ring fills as rounds complete, cat is smiling
  *   - Done: FAB unmounts (AutoOptimizedCard takes over)
@@ -65,22 +81,90 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
+  // v14 — refs for focus management
+  // fabRef: outer container, used to detect "focus still inside FAB" on
+  //         unmount cleanup (don't yank focus back if user clicked
+  //         elsewhere). NOT the auto-focus target.
+  // circleRef: inner circle (tabIndex=0, has the :focus-visible ring) —
+  //         this is where we focus and where the focus-trap anchors.
+  const fabRef = useRef<HTMLDivElement>(null);
+  const circleRef = useRef<HTMLDivElement>(null);
+  const abortButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   // Tick clock every 1s for the elapsed label
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
 
-  // Auto-dismiss error FAB after 8s
+  // v14 — auto-focus on mount, restore focus on unmount.
+  // Capture whatever element had focus (typically the AI Optimize button),
+  // move focus into the FAB's inner circle (where the visible focus ring
+  // lives) so keyboard / screen-reader users know the pipeline is running
+  // and can abort with Tab + Enter. On unmount, hand focus back to the
+  // original element — but only if focus is still inside our FAB, so we
+  // don't steal focus from a click on something else.
+  useEffect(() => {
+    previousFocusRef.current =
+      (document.activeElement as HTMLElement | null) ?? null;
+    const id = requestAnimationFrame(() => {
+      circleRef.current?.focus();
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      const active = document.activeElement as HTMLElement | null;
+      const insideFab =
+        active !== null &&
+        (fabRef.current?.contains(active) ?? false);
+      if (!insideFab) return;
+      previousFocusRef.current?.focus?.();
+    };
+  }, []);
+
+  // v14 — keyboard handling: Esc = abort, Tab = focus-trap between the
+  // FAB's inner circle and the Abort button (so Tab can't escape to the
+  // page behind the backdrop while the modal is open). Anchoring on the
+  // inner circle — not the outer container — keeps the trap tight: any
+  // Tab/Shift+Tab between the two focusables stays inside the modal.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onAbort();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const order = [circleRef.current, abortButtonRef.current].filter(
+        Boolean,
+      ) as HTMLElement[];
+      if (order.length < 2) return;
+      const first = order[0];
+      const last = order[order.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onAbort]);
+
+  // Auto-dismiss error FAB after 8s. Routes through onAbort() → pipeline
+  // abort → reducer ABORT → status:'idle' → component unmounts → focus
+  // restored to the previously-focused trigger button.
   const mood = deriveMood(state);
   useEffect(() => {
     if (mood !== 'error') return;
     const id = window.setTimeout(() => {
-      // The user already had 8s to read the error; AutoOptimizedCard shows it
-      // anyway. We just unmount.
+      onAbort();
     }, 8000);
     return () => window.clearTimeout(id);
-  }, [mood]);
+  }, [mood, onAbort]);
 
   // Only show during running; done state lets AutoOptimizedCard take over.
   if (state.status !== 'running') return null;
@@ -131,24 +215,49 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
           : colors.accent.green;
 
   return (
-    <div
-      data-testid="cat-progress-fab"
-      data-cat-mood={mood}
-      data-progress-percent={progressPercent}
-      style={{
-        position: 'fixed',
-        bottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
-        right: 24,
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 6,
-        fontFamily: fonts.family,
-      }}
-    >
-      {/* The circular FAB */}
+    <>
+      {/* v14 — Backdrop: dims the page and accepts click-outside-to-cancel.
+          aria-hidden because the FAB's own dialog semantics announce state. */}
       <div
+        data-testid="cat-progress-backdrop"
+        aria-hidden="true"
+        onClick={onAbort}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: BACKDROP_Z,
+          animation: 'catBackdropFade 200ms ease-out',
+        }}
+      />
+
+      <div
+        ref={fabRef}
+        data-testid="cat-progress-fab"
+        data-cat-mood={mood}
+        data-progress-percent={progressPercent}
+        tabIndex={-1}
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: FAB_Z,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 8,
+          fontFamily: fonts.family,
+          animation: 'catFadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+          outline: 'none',
+        }}
+      >
+      {/* The circular FAB — focus target. v14: visible focus ring via
+          :focus (always visible while focused, since the FAB acts as a
+          modal and users benefit from constant focus indication), larger
+          size to feel "central". */}
+      <div
+        ref={circleRef}
         data-testid="cat-progress-circle"
         role="group"
         aria-label={`AI Optimize: ${statusLabel}`}
@@ -169,6 +278,7 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
         onBlur={() => setTooltipOpen(false)}
         onClick={() => setTooltipOpen((v) => !v)}
         tabIndex={0}
+        className="cat-progress-circle-focusable"
       >
         {/* SVG ring */}
         <svg
@@ -247,7 +357,8 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
         </div>
       ) : null}
 
-      {/* Tooltip */}
+      {/* Tooltip — v14: re-centered above the FAB instead of anchored
+          right (which was for the bottom-right positioning). */}
       <div
         data-testid="cat-progress-tooltip"
         role="tooltip"
@@ -256,7 +367,8 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
         style={{
           position: 'absolute',
           bottom: '100%',
-          right: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
           marginBottom: 12,
           minWidth: 220,
           maxWidth: 320,
@@ -300,6 +412,7 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
           </span>
         </div>
         <button
+          ref={abortButtonRef}
           type="button"
           onClick={(e) => {
             e.stopPropagation();
@@ -330,8 +443,21 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
           0%, 100% { opacity: 0.08; transform: scale(1); }
           50% { opacity: 0.20; transform: scale(1.04); }
         }
+        @keyframes catFadeIn {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes catBackdropFade {
+          0%   { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        .cat-progress-circle-focusable:focus {
+          outline: none;
+          box-shadow: 0 0 0 3px ${colors.accent.purple}66, ${shadows.card};
+        }
       `}</style>
     </div>
+    </>
   );
 }
 
