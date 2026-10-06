@@ -82,7 +82,13 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
   const [now, setNow] = useState(() => Date.now());
 
   // v14 — refs for focus management
+  // fabRef: outer container, used to detect "focus still inside FAB" on
+  //         unmount cleanup (don't yank focus back if user clicked
+  //         elsewhere). NOT the auto-focus target.
+  // circleRef: inner circle (tabIndex=0, has the :focus-visible ring) —
+  //         this is where we focus and where the focus-trap anchors.
   const fabRef = useRef<HTMLDivElement>(null);
+  const circleRef = useRef<HTMLDivElement>(null);
   const abortButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -94,19 +100,19 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
 
   // v14 — auto-focus on mount, restore focus on unmount.
   // Capture whatever element had focus (typically the AI Optimize button),
-  // move focus into the FAB so keyboard / screen-reader users know the
-  // pipeline is running and can abort with Tab + Enter. On unmount, hand
-  // focus back to the original element.
+  // move focus into the FAB's inner circle (where the visible focus ring
+  // lives) so keyboard / screen-reader users know the pipeline is running
+  // and can abort with Tab + Enter. On unmount, hand focus back to the
+  // original element — but only if focus is still inside our FAB, so we
+  // don't steal focus from a click on something else.
   useEffect(() => {
     previousFocusRef.current =
       (document.activeElement as HTMLElement | null) ?? null;
     const id = requestAnimationFrame(() => {
-      fabRef.current?.focus();
+      circleRef.current?.focus();
     });
     return () => {
       cancelAnimationFrame(id);
-      // Only restore if the focus is still inside our FAB (otherwise the
-      // user has clicked something else and we should respect that).
       const active = document.activeElement as HTMLElement | null;
       const insideFab =
         active !== null &&
@@ -116,9 +122,11 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
     };
   }, []);
 
-  // v14 — keyboard handling: Esc = abort, Tab = focus-trap between FAB
-  // circle and Abort button (so Tab can't escape to the page behind the
-  // backdrop while the modal is open).
+  // v14 — keyboard handling: Esc = abort, Tab = focus-trap between the
+  // FAB's inner circle and the Abort button (so Tab can't escape to the
+  // page behind the backdrop while the modal is open). Anchoring on the
+  // inner circle — not the outer container — keeps the trap tight: any
+  // Tab/Shift+Tab between the two focusables stays inside the modal.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -127,7 +135,7 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
         return;
       }
       if (e.key !== 'Tab') return;
-      const order = [fabRef.current, abortButtonRef.current].filter(
+      const order = [circleRef.current, abortButtonRef.current].filter(
         Boolean,
       ) as HTMLElement[];
       if (order.length < 2) return;
@@ -146,16 +154,17 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onAbort]);
 
-  // Auto-dismiss error FAB after 8s
+  // Auto-dismiss error FAB after 8s. Routes through onAbort() → pipeline
+  // abort → reducer ABORT → status:'idle' → component unmounts → focus
+  // restored to the previously-focused trigger button.
   const mood = deriveMood(state);
   useEffect(() => {
     if (mood !== 'error') return;
     const id = window.setTimeout(() => {
-      // The user already had 8s to read the error; AutoOptimizedCard shows it
-      // anyway. We just unmount.
+      onAbort();
     }, 8000);
     return () => window.clearTimeout(id);
-  }, [mood]);
+  }, [mood, onAbort]);
 
   // Only show during running; done state lets AutoOptimizedCard take over.
   if (state.status !== 'running') return null;
@@ -244,8 +253,11 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
         }}
       >
       {/* The circular FAB — focus target. v14: visible focus ring via
-          :focus-visible, larger size to feel "central". */}
+          :focus (always visible while focused, since the FAB acts as a
+          modal and users benefit from constant focus indication), larger
+          size to feel "central". */}
       <div
+        ref={circleRef}
         data-testid="cat-progress-circle"
         role="group"
         aria-label={`AI Optimize: ${statusLabel}`}
@@ -439,7 +451,7 @@ export function CatProgressFab({ pipeline, onAbort }: CatProgressFabProps) {
           0%   { opacity: 0; }
           100% { opacity: 1; }
         }
-        .cat-progress-circle-focusable:focus-visible {
+        .cat-progress-circle-focusable:focus {
           outline: none;
           box-shadow: 0 0 0 3px ${colors.accent.purple}66, ${shadows.card};
         }

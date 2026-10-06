@@ -180,9 +180,9 @@ describe('CatProgressFab source contracts', () => {
 
   it('auto-focuses FAB on mount via requestAnimationFrame', async () => {
     const text = readFab();
-    expect(text).toMatch(/fabRef/);
+    // Either ref name is fine — what matters is "FAB is focused via rAF".
     expect(text).toMatch(/requestAnimationFrame/);
-    expect(text).toMatch(/fabRef\.current\?\.focus\(\)/);
+    expect(text).toMatch(/(?:fabRef|circleRef)\.current\?\.focus\(\)/);
   });
 
   it('restores focus on unmount to previously-focused element', async () => {
@@ -199,9 +199,30 @@ describe('CatProgressFab source contracts', () => {
 
   it('traps focus inside FAB + abort button via Tab key', async () => {
     const text = readFab();
+    // The trap is anchored on the inner circle (where focus actually lands),
+    // not the outer container — so the order array contains circleRef, not fabRef.
     expect(text).toMatch(/abortButtonRef/);
     expect(text).toMatch(/['"]Tab['"]/);
     expect(text).toMatch(/window\.addEventListener\(['"]keydown['"]/);
+    expect(text).toMatch(/\[circleRef\.current, abortButtonRef\.current\]/);
+  });
+
+  it('auto-dismisses error FAB after 8s by calling onAbort()', async () => {
+    const text = readFab();
+    // The 8s timeout must actually invoke onAbort() — not be a no-op —
+    // so the FAB unmounts when the pipeline errors and the user doesn't
+    // manually cancel.
+    expect(text).toMatch(/window\.setTimeout/);
+    expect(text).toMatch(/8000/);
+    expect(text).toMatch(/onAbort\(\)/);
+  });
+
+  it('uses :focus (not :focus-visible) so the ring shows on auto-focus', async () => {
+    const text = readFab();
+    // :focus-visible would skip programmatic focus from a click gesture;
+    // :focus shows the ring any time the element is focused.
+    expect(text).toMatch(/\.cat-progress-circle-focusable:focus\s*\{/);
+    expect(text).not.toMatch(/\.cat-progress-circle-focusable:focus-visible\s*\{/);
   });
 
   it('uses entrance animation (catFadeIn + catBackdropFade)', async () => {
